@@ -2,7 +2,7 @@
 
 # ⚛️ ALIN
 
-### Atomic Logic-link Integration Network
+### Atomic Logic Inode Network
 
 *基于操作系统原子特性的解耦合计算范式*
 
@@ -265,6 +265,6 @@ MIT License - 详见 [LICENSE](LICENSE)
 
 **ALIN** - *Where Logic Flows Through Links*
 
-Made with ⚛️ by [Your Name]
+Made with ⚛️ by ChaiZhiHan
 
 </div>

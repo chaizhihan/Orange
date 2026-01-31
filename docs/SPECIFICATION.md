@@ -1,4 +1,4 @@
-# ALin 架构说明书 (Architecture Specification)
+# ALIN - Atomic Logic Inode Network 架构说明书
 
 ## 1. 核心定义 (Core Concepts)
 
