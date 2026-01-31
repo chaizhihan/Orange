@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIN Stream Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">⚛️</span>
+                <h1>ALIN Stream Dashboard</h1>
+            </div>
+            <div class="status">
+                <span class="status-indicator active"></span>
+                <span>Pipeline Active</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Topology Section -->
+            <section class="card topology-card">
+                <h2>🔗 Pipeline Topology</h2>
+                <div class="topology-container" id="topology">
+                    <div class="topology-flow">
+                        <div class="node-box source">
+                            <div class="node-icon">📥</div>
+                            <div class="node-name">Input</div>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="node-box parser" id="node-parser">
+                            <div class="node-icon">📜</div>
+                            <div class="node-name">parse_json</div>
+                            <div class="node-inode">Inode: <span id="inode-parser">--</span></div>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="node-box filter" id="node-filter">
+                            <div class="node-icon">🔍</div>
+                            <div class="node-name">filter_level</div>
+                            <div class="node-inode">Inode: <span id="inode-filter">--</span></div>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="node-box aggregator" id="node-agg">
+                            <div class="node-icon">📊</div>
+                            <div class="node-name">agg_count</div>
+                            <div class="node-inode">Inode: <span id="inode-agg">--</span></div>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="node-box alerter" id="node-alert">
+                            <div class="node-icon">🚨</div>
+                            <div class="node-name">alert_console</div>
+                            <div class="node-inode">Inode: <span id="inode-alert">--</span></div>
+                        </div>
+                        <div class="arrow">→</div>
+                        <div class="node-box output">
+                            <div class="node-icon">📤</div>
+                            <div class="node-name">Output</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="card stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="total-events">0</div>
+                        <div class="stat-label">Total Events</div>
+                    </div>
+                </div>
+                <div class="card stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="event-rate">0</div>
+                        <div class="stat-label">Events/sec</div>
+                    </div>
+                </div>
+                <div class="card stat-card error">
+                    <div class="stat-icon">🔴</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="error-count">0</div>
+                        <div class="stat-label">Errors</div>
+                    </div>
+                </div>
+                <div class="card stat-card warning">
+                    <div class="stat-icon">🟡</div>
+                    <div class="stat-content">
+                        <div class="stat-value" id="warn-count">0</div>
+                        <div class="stat-label">Warnings</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Stream & Controls -->
+            <div class="content-grid">
+                <!-- Event Stream -->
+                <section class="card events-card">
+                    <h2>📜 Event Stream</h2>
+                    <div class="events-list" id="events-list">
+                        <div class="event-item">
+                            <span class="event-time">--:--:--</span>
+                            <span class="event-level level-info">INFO</span>
+                            <span class="event-msg">Waiting for events...</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Controls -->
+                <section class="card controls-card">
+                    <h2>🎮 Hot Swap Controls</h2>
+                    
+                    <div class="control-group">
+                        <label>Filter Level</label>
+                        <div class="button-group">
+                            <button class="btn" data-level="DEBUG">DEBUG</button>
+                            <button class="btn" data-level="INFO">INFO</button>
+                            <button class="btn active" data-level="WARN">WARN</button>
+                            <button class="btn" data-level="ERROR">ERROR</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Alert Threshold</label>
+                        <input type="range" id="threshold-slider" min="0" max="100" value="10">
+                        <span id="threshold-value">10</span>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Actions</label>
+                        <div class="button-group">
+                            <button class="btn primary" id="btn-refresh">🔄 Refresh</button>
+                            <button class="btn danger" id="btn-reset">♻️ Reset Stats</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Simulate Events</label>
+                        <div class="button-group">
+                            <button class="btn" id="btn-gen-info">+ INFO</button>
+                            <button class="btn" id="btn-gen-warn">+ WARN</button>
+                            <button class="btn" id="btn-gen-error">+ ERROR</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Level Distribution -->
+            <section class="card chart-card">
+                <h2>📈 Level Distribution</h2>
+                <div class="chart-container">
+                    <div class="bar-chart" id="level-chart">
+                        <div class="bar-item">
+                            <div class="bar-label">ERROR</div>
+                            <div class="bar-track">
+                                <div class="bar-fill error" id="bar-error" style="width: 0%"></div>
+                            </div>
+                            <div class="bar-value" id="val-error">0</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-label">WARN</div>
+                            <div class="bar-track">
+                                <div class="bar-fill warn" id="bar-warn" style="width: 0%"></div>
+                            </div>
+                            <div class="bar-value" id="val-warn">0</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-label">INFO</div>
+                            <div class="bar-track">
+                                <div class="bar-fill info" id="bar-info" style="width: 0%"></div>
+                            </div>
+                            <div class="bar-value" id="val-info">0</div>
+                        </div>
+                        <div class="bar-item">
+                            <div class="bar-label">DEBUG</div>
+                            <div class="bar-track">
+                                <div class="bar-fill debug" id="bar-debug" style="width: 0%"></div>
+                            </div>
+                            <div class="bar-value" id="val-debug">0</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>ALIN - Atomic Logic-link Integration Network</p>
+            <p class="version">v1.0.0 | Stream Processing Engine</p>
+        </footer>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

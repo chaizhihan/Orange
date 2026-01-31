@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIN Image Pipeline Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --accent-primary: #8b5cf6;
+            --accent-secondary: #6366f1;
+            --color-error: #ef4444;
+            --color-warn: #f59e0b;
+            --color-info: #22c55e;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #2a2a3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+        }
+
+        .pipeline {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .node {
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .node.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .node-icon {
+            font-size: 1.5rem;
+        }
+
+        .node-name {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .arrow {
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .preview-area {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .preview-header h2 {
+            font-size: 1.1rem;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .image-card {
+            background: var(--bg-secondary);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .image-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .image-card.selected {
+            border: 2px solid var(--accent-primary);
+        }
+
+        .image-card canvas {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .image-card .label {
+            padding: 0.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .controls {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+        }
+
+        .controls h2 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .filter-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-btn:hover {
+            background: var(--bg-card);
+            border-color: var(--accent-primary);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .filter-btn .icon {
+            font-size: 1.2rem;
+        }
+
+        .stats {
+            background: var(--bg-secondary);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .hot-swap-indicator {
+            background: linear-gradient(135deg, var(--color-info), #4ade80);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 ALIN Image Pipeline Dashboard</h1>
+            <p>实时图像滤镜处理 - 热切换演示</p>
+        </header>
+
+        <!-- Pipeline Visualization -->
+        <div class="pipeline">
+            <div class="node">
+                <div class="node-icon">📷</div>
+                <div class="node-name">Input</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node active">
+                <div class="node-icon">📥</div>
+                <div class="node-name">decode_image</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node active" id="filter-node">
+                <div class="node-icon">🎨</div>
+                <div class="node-name" id="filter-name">filter_grayscale</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node active">
+                <div class="node-icon">📤</div>
+                <div class="node-name">encode_png</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node">
+                <div class="node-icon">🖼️</div>
+                <div class="node-name">Output</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="preview-area">
+                <div class="preview-header">
+                    <h2>📸 滤镜效果预览</h2>
+                </div>
+                <div class="image-grid">
+                    <div class="image-card" id="card-original">
+                        <canvas id="canvas-original"></canvas>
+                        <div class="label">原始图像</div>
+                    </div>
+                    <div class="image-card selected" id="card-grayscale">
+                        <canvas id="canvas-grayscale"></canvas>
+                        <div class="label">灰度 (Grayscale)</div>
+                    </div>
+                    <div class="image-card" id="card-sepia">
+                        <canvas id="canvas-sepia"></canvas>
+                        <div class="label">复古 (Sepia)</div>
+                    </div>
+                    <div class="image-card" id="card-invert">
+                        <canvas id="canvas-invert"></canvas>
+                        <div class="label">反色 (Invert)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h2>🔧 热切换控制</h2>
+
+                <div class="filter-group">
+                    <label>选择滤镜</label>
+                    <div class="filter-buttons">
+                        <button class="filter-btn" data-filter="none">
+                            <span class="icon">📷</span> 无滤镜 (passthrough)
+                        </button>
+                        <button class="filter-btn active" data-filter="grayscale">
+                            <span class="icon">⚫</span> 灰度 (grayscale)
+                        </button>
+                        <button class="filter-btn" data-filter="sepia">
+                            <span class="icon">🟤</span> 复古 (sepia)
+                        </button>
+                        <button class="filter-btn" data-filter="invert">
+                            <span class="icon">🔄</span> 反色 (invert)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-row">
+                        <span class="stat-label">当前滤镜</span>
+                        <span class="stat-value" id="current-filter">grayscale</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">图像尺寸</span>
+                        <span class="stat-value">200 × 200</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">处理时间</span>
+                        <span class="stat-value" id="process-time">~50ms</span>
+                    </div>
+                </div>
+
+                <div class="hot-swap-indicator">
+                    🔥 热切换就绪 - 无需重启管道
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            ALIN - Atomic Logic-link Integration Network | Image Pipeline v1.0
+        </footer>
+    </div>
+
+    <script>
+        // 创建渐变图像
+        function createGradientImage(canvas) {
+            const ctx = canvas.getContext('2d');
+            const width = 200, height = 200;
+            canvas.width = width;
+            canvas.height = height;
+
+            const imageData = ctx.createImageData(width, height);
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const i = (y * width + x) * 4;
+                    imageData.data[i] = Math.floor(255 * x / width);     // R
+                    imageData.data[i + 1] = Math.floor(255 * y / height); // G
+                    imageData.data[i + 2] = Math.floor(255 * (1 - x / width)); // B
+                    imageData.data[i + 3] = 255; // A
+                }
+            }
+            return imageData;
+        }
+
+        // 应用滤镜
+        function applyFilter(imageData, filter) {
+            const data = new Uint8ClampedArray(imageData.data);
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+
+                switch (filter) {
+                    case 'grayscale':
+                        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                        data[i] = data[i + 1] = data[i + 2] = gray;
+                        break;
+                    case 'sepia':
+                        data[i] = Math.min(255, 0.393 * r + 0.769 * g + 0.189 * b);
+                        data[i + 1] = Math.min(255, 0.349 * r + 0.686 * g + 0.168 * b);
+                        data[i + 2] = Math.min(255, 0.272 * r + 0.534 * g + 0.131 * b);
+                        break;
+                    case 'invert':
+                        data[i] = 255 - r;
+                        data[i + 1] = 255 - g;
+                        data[i + 2] = 255 - b;
+                        break;
+                }
+            }
+
+            return new ImageData(data, imageData.width, imageData.height);
+        }
+
+        // 初始化
+        function init() {
+            const canvases = {
+                original: document.getElementById('canvas-original'),
+                grayscale: document.getElementById('canvas-grayscale'),
+                sepia: document.getElementById('canvas-sepia'),
+                invert: document.getElementById('canvas-invert')
+            };
+
+            // 创建原始图像
+            const original = createGradientImage(canvases.original);
+            canvases.original.getContext('2d').putImageData(original, 0, 0);
+
+            // 应用各种滤镜
+            const filters = ['grayscale', 'sepia', 'invert'];
+            filters.forEach(filter => {
+                const canvas = canvases[filter];
+                canvas.width = 200;
+                canvas.height = 200;
+                const filtered = applyFilter(original, filter);
+                canvas.getContext('2d').putImageData(filtered, 0, 0);
+            });
+
+            // 绑定按钮事件
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const filter = btn.dataset.filter;
+
+                    // 更新按钮状态
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    // 更新卡片状态
+                    document.querySelectorAll('.image-card').forEach(c => c.classList.remove('selected'));
+                    const cardId = filter === 'none' ? 'original' : filter;
+                    document.getElementById('card-' + cardId)?.classList.add('selected');
+
+                    // 更新显示
+                    document.getElementById('filter-name').textContent =
+                        filter === 'none' ? 'passthrough' : 'filter_' + filter;
+                    document.getElementById('current-filter').textContent =
+                        filter === 'none' ? 'none' : filter;
+
+                    // 模拟处理时间
+                    const times = { none: '~10ms', grayscale: '~50ms', sepia: '~55ms', invert: '~45ms' };
+                    document.getElementById('process-time').textContent = times[filter];
+                });
+            });
+
+            // 点击卡片切换滤镜
+            document.querySelectorAll('.image-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const filter = card.id.replace('card-', '');
+                    const filterName = filter === 'original' ? 'none' : filter;
+                    document.querySelector(`.filter-btn[data-filter="${filterName}"]`)?.click();
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+
+</html>

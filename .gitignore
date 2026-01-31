@@ -1,0 +1,44 @@
+# ALIN 项目忽略文件
+
+# 编译产物
+alin/nodes/*
+!alin/nodes/.gitkeep
+
+# Python 脚本节点（保留源码，忽略编译的 C 版本）
+alin/nodes/*_[a-f0-9]*
+
+# 状态文件
+alin/state/*.state
+
+# 临时文件
+*.o
+*.out
+*.tmp
+/tmp/
+
+# 数据文件
+alin/data/*.jsonl
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+
+# 日志
+*.log
+
+# 元数据（可选保留）
+# alin/meta/*.meta
