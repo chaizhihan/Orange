@@ -191,7 +191,9 @@ echo '{"level":"WARN","msg":"test"}' | ./scripts/alin_run.sh
 
 ## 📖 文档
 
-- [架构设计](docs/ARCHITECTURE.md)
+- [架构说明书 (Specification)](docs/SPECIFICATION.md)
+- [环境构建指令提纲 (Agent Prompt Guide)](docs/PROMPT_GUIDE.md)
+- [架构设计深度解析 (Architecture Detail)](docs/ARCHITECTURE.md)
 - [API 参考](docs/API.md)
 - [开发指南](docs/CONTRIBUTING.md)
 
