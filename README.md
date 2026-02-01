@@ -174,24 +174,13 @@ atomicLogicInodeNetwork/
 <tr>
 <td>streaming 流处理</td>
 <td>imaging 图像处理</td>
-<td>hot-swap 热切换</td>
 </tr>
 <tr>
 <td><a href="https://chaizhihan.github.io/Orange/stream_dashboard.html"><img src="docs/assets/stream_dashboard.png"></a></td>
 <td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
-<td><a href="https://chaizhihan.github.io/Orange/"><img src="docs/assets/stream_dashboard.png"></a></td>
-</tr>
-<tr>
-<td>grayscale 灰度</td>
-<td>sepia 复古</td>
-<td>invert 反色</td>
-</tr>
-<tr>
-<td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
-<td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
-<td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
 </tr>
 </table>
+
 
 ---
 
