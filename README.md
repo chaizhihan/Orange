@@ -168,49 +168,50 @@ atomicLogicInodeNetwork/
 
 ---
 
-## 🎮 Examples 示例
+## Examples 示例
 
 <table>
-  <tr>
-    <td width="50%">
-      <h3>streaming 流处理</h3>
-      <a href="https://chaizhihan.github.io/Orange/stream_dashboard.html">
-        <img src="docs/assets/stream_dashboard.png" width="100%" alt="Stream Dashboard" />
-      </a>
-      <p>Real-time log analysis pipeline with hot-swappable filters.<br>实时日志流分析，支持热切换过滤规则。</p>
-    </td>
-    <td width="50%">
-      <h3>imaging 图像处理</h3>
-      <a href="https://chaizhihan.github.io/Orange/image_dashboard.html">
-        <img src="docs/assets/image_dashboard.png" width="100%" alt="Image Dashboard" />
-      </a>
-      <p>Image processing pipeline with grayscale/sepia/invert filters.<br>图像滤镜管道，支持实时预览和逻辑切换。</p>
-    </td>
-  </tr>
+<tr>
+<td>streaming 流处理</td>
+<td>imaging 图像处理</td>
+<td>hot-swap 热切换</td>
+</tr>
+<tr>
+<td><a href="https://chaizhihan.github.io/Orange/stream_dashboard.html"><img src="docs/assets/stream_dashboard.png"></a></td>
+<td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
+<td><a href="https://chaizhihan.github.io/Orange/"><img src="docs/assets/stream_dashboard.png"></a></td>
+</tr>
+<tr>
+<td>grayscale 灰度</td>
+<td>sepia 复古</td>
+<td>invert 反色</td>
+</tr>
+<tr>
+<td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
+<td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
+<td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
+</tr>
 </table>
 
-### 命令行演示
+---
 
-#### 1. 实时流处理
+## 🖥️ 命令行演示
+
+### 流处理
 ```bash
-# 配置管道
 ./scripts/alin_link.sh swap_logic 01_parse parse_json
 ./scripts/alin_link.sh swap_logic 02_filter filter_level
-./scripts/alin_link.sh swap_logic 03_agg agg_count
-./scripts/alin_link.sh swap_logic 04_alert alert_console
-
-# 处理日志
 echo '{"level":"ERROR","msg":"test"}' | ./scripts/alin_run.sh
 ```
 
-#### 2. 图像处理
+### 图像处理
 ```bash
-# 应用不同滤镜
 echo '{"path":"input.jpg"}' | \
     alin/nodes/decode_image_py | \
     alin/nodes/filter_sepia_py | \
     alin/nodes/encode_png_py
 ```
+
 
 ---
 
