@@ -131,8 +131,11 @@ cd Orange
 
 ### 查看 Web Dashboard
 
+GitHub Pages: [https://chaizhihan.github.io/Orange/](https://chaizhihan.github.io/Orange/)
+
+本地运行:
 ```bash
-cd web && python3 -m http.server 8080
+cd docs && python3 -m http.server 8080
 # 打开 http://localhost:8080
 ```
 
