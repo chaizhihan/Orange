@@ -21,3 +21,14 @@ streaming = stdin/stdout
 
 [dependencies]
 none
+
+[ai_ops]
+enable  = ln -sf ../nodes/filter_level_c alin/active/02_filter
+disable = rm alin/active/02_filter
+test    = echo '{"level":"ERROR","msg":"test"}' | ./alin/active/02_filter
+
+[ai_context]
+# 修改过滤级别 (无需重启)
+config = export ALIN_FILTER_LEVEL=WARN
+# 热切换到新版本
+upgrade = ln -sf ../nodes/filter_level_v2 alin/active/02_filter
