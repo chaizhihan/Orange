@@ -372,8 +372,14 @@
 
 <body>
     <div class="header">
-        <h1>⚛️ ALIN Evolution Dashboard</h1>
-        <button class="evolve-btn" onclick="evolve()">🧬 进化 (Evolve)</button>
+        <h1 data-i18n="header-title">⚛️ ALIN Evolution Dashboard</h1>
+        <div class="flex items-center gap-4" style="display: flex; align-items: center; gap: 1rem;">
+            <button onclick="toggleLang()"
+                style="background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 0.4rem 1rem; border-radius: 999px; cursor: pointer; font-size: 0.7rem; text-transform: uppercase;">
+                <span id="lang-label">EN / 中文</span>
+            </button>
+            <button class="evolve-btn" onclick="evolve()" data-i18n="btn-evolve">🧬 进化 (Evolve)</button>
+        </div>
     </div>
 
     <div class="main">
@@ -381,8 +387,8 @@
             <!-- 实时拓扑图 -->
             <div class="panel" style="flex: 2;">
                 <div class="panel-header">
-                    <span>📊 实时拓扑图 (Live Topology)</span>
-                    <span class="badge">4 Nodes</span>
+                    <span data-i18n="panel-topo">📊 实时拓扑图 (Live Topology)</span>
+                    <span class="badge" data-i18n="badge-nodes">4 Nodes</span>
                 </div>
                 <div id="topology">
                     <canvas id="topology-canvas"></canvas>
@@ -392,8 +398,8 @@
             <!-- 热插拔面板 -->
             <div class="panel">
                 <div class="panel-header">
-                    <span>🔌 逻辑插槽 (Logic Slots)</span>
-                    <span style="font-size: 0.7rem; color: var(--text-dim);">拖拽以插拔</span>
+                    <span data-i18n="panel-slots">🔌 逻辑插槽 (Logic Slots)</span>
+                    <span style="font-size: 0.7rem; color: var(--text-dim);" data-i18n="hint-drag">拖拽以插拔</span>
                 </div>
                 <div class="slots" id="slots">
                     <div class="slot active" data-node="parse_json">
@@ -414,7 +420,7 @@
                     </div>
                     <div class="slot empty" onclick="addSlot()">
                         <span class="slot-icon">+</span>
-                        <span class="slot-name">添加插槽</span>
+                        <span class="slot-name" data-i18n="btn-add-slot">添加插槽</span>
                     </div>
                 </div>
             </div>
@@ -424,7 +430,7 @@
             <!-- 灰度发布 -->
             <div class="panel">
                 <div class="panel-header">
-                    <span>🎨 灰度发布 (Canary)</span>
+                    <span data-i18n="panel-canary">🎨 灰度发布 (Canary)</span>
                 </div>
                 <div class="canary-container">
                     <div class="canary-bar">
@@ -434,8 +440,8 @@
                     <input type="range" class="canary-slider" min="0" max="100" value="10"
                         onchange="updateCanary(this.value)">
                     <div class="canary-label">
-                        <span>← 保守 (v1)</span>
-                        <span>激进 (v2) →</span>
+                        <span data-i18n="canary-v1-label">← 保守 (v1)</span>
+                        <span data-i18n="canary-v2-label">激进 (v2) →</span>
                     </div>
                 </div>
             </div>
@@ -443,13 +449,13 @@
             <!-- 自愈演示 -->
             <div class="panel">
                 <div class="panel-header">
-                    <span>💪 极速自愈 (Resilience)</span>
+                    <span data-i18n="panel-resilience">💪 极速自愈 (Resilience)</span>
                 </div>
                 <div class="resilience">
                     <div class="resilience-status">
                         <div class="status-indicator" id="status-indicator"></div>
-                        <span id="status-text">系统正常运行</span>
-                        <button class="crash-btn" onclick="simulateCrash()">模拟崩溃</button>
+                        <span id="status-text" data-i18n="status-healthy">系统正常运行</span>
+                        <button class="crash-btn" onclick="simulateCrash()" data-i18n="btn-crash">模拟崩溃</button>
                     </div>
                     <div class="recovery-time" id="recovery-time" style="margin-top: 0.5rem;"></div>
                 </div>
@@ -458,7 +464,7 @@
             <!-- 版本时间轴 -->
             <div class="panel">
                 <div class="panel-header">
-                    <span>⏱️ 版本时间轴 (Timeline)</span>
+                    <span data-i18n="panel-timeline">⏱️ 版本时间轴 (Timeline)</span>
                 </div>
                 <div class="timeline">
                     <div class="timeline-track" id="timeline">
@@ -483,25 +489,17 @@
             <!-- 元数据面板 -->
             <div class="panel" style="flex: 1;">
                 <div class="panel-header">
-                    <span>📋 元数据 (.meta)</span>
+                    <span data-i18n="panel-meta">📋 元数据 (.meta)</span>
                 </div>
                 <div class="meta-panel">
-                    <pre id="meta-content"># 点击节点查看元数据
-
-[node]
-name = filter_level
-hash = abc12345
-inode = 7335321
-
-[ai_context]
-热切换: ln -sf filter_v2 active/02</pre>
+                    <pre id="meta-content" data-i18n="meta-placeholder"># 点击节点查看元数据</pre>
                 </div>
             </div>
 
             <!-- 吞吐量 -->
             <div class="panel">
                 <div class="panel-header">
-                    <span>📈 吞吐量 (Throughput)</span>
+                    <span data-i18n="panel-throughput">📈 吞吐量 (Throughput)</span>
                     <span style="font-size: 0.7rem;">1.2k/s</span>
                 </div>
                 <div class="throughput">
@@ -512,7 +510,75 @@ inode = 7335321
     </div>
 
     <script>
-        // 拓扑图绘制
+        let currentLang = 'en';
+        const I18N = {
+            en: {
+                "header-title": "⚛️ ALIN Evolution Dashboard",
+                "btn-evolve": "🧬 Evolve",
+                "panel-topo": "📊 Live Topology",
+                "badge-nodes": "4 Nodes",
+                "panel-slots": "🔌 Logic Slots",
+                "hint-drag": "Drag to toggle",
+                "btn-add-slot": "Add Slot",
+                "panel-canary": "🎨 Canary Release",
+                "canary-v1-label": "← Consrv (v1)",
+                "canary-v2-label": "Aggr (v2) →",
+                "panel-resilience": "💪 Resilience & Self-healing",
+                "status-healthy": "System Healthy",
+                "status-crashed": "⚠️ Node Crashed!",
+                "status-recovering": "🔄 Recovering...",
+                "status-recovered": "✅ System Restored",
+                "btn-crash": "Simulate Crash",
+                "panel-timeline": "⏱️ Version Timeline",
+                "panel-meta": "📋 Metadata (.meta)",
+                "meta-placeholder": "# Click nodes for metadata",
+                "panel-throughput": "📈 Throughput",
+                "btn-crash": "Simulate Crash",
+                "recovery-msg": "Recovery time",
+                "recovery-sub": "(Atomic swap via ln -sf)",
+                "add-slot-msg": "🔌 New logic hot-inserted!\n\nIn ALIN, just run:\nln -sf node_crypto active/05\n\nNo restart, pure flow!"
+            },
+            zh: {
+                "header-title": "⚛️ ALIN 逻辑进化仪表盘",
+                "btn-evolve": "🧬 触发进化",
+                "panel-topo": "📊 实时拓扑图",
+                "badge-nodes": "4 节点",
+                "panel-slots": "🔌 逻辑插槽",
+                "hint-drag": "可拖拽插拔",
+                "btn-add-slot": "添加插槽",
+                "panel-canary": "🎨 灰度发布",
+                "canary-v1-label": "← 保守 (v1)",
+                "canary-v2-label": "激进 (v2) →",
+                "panel-resilience": "💪 极速自愈演示",
+                "status-healthy": "系统正常运行",
+                "status-crashed": "⚠️ 节点崩溃!",
+                "status-recovering": "🔄 自愈中...",
+                "status-recovered": "✅ 系统已恢复",
+                "btn-crash": "模拟崩溃",
+                "panel-timeline": "⏱️ 版本时间轴",
+                "panel-meta": "📋 元数据 (.meta)",
+                "meta-placeholder": "# 点击节点查看元数据",
+                "panel-throughput": "📈 吞吐量",
+                "recovery-msg": "恢复耗时",
+                "recovery-sub": "(ln -sf 原子切换)",
+                "add-slot-msg": "🔌 新逻辑热插入!\n\n在 ALIN 中只需:\nln -sf node_crypto active/05\n\n无需重启，即插即用!"
+            }
+        };
+
+        function toggleLang() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateUI();
+        }
+
+        function updateUI() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = I18N[currentLang][key];
+            });
+            document.getElementById('lang-label').innerText = currentLang === 'en' ? 'EN / 中文' : '中文 / EN';
+        }
+
+        // 拓扑图绘制 ... (remaining script)
         const canvas = document.getElementById('topology-canvas');
         const ctx = canvas.getContext('2d');
 
@@ -535,114 +601,48 @@ inode = 7335321
 
         function drawTopology() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 绘制连线
-            ctx.strokeStyle = '#2a2a3a';
-            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#2a2a3a'; ctx.lineWidth = 2;
             for (let i = 0; i < nodes.length - 1; i++) {
-                ctx.beginPath();
-                ctx.moveTo(nodes[i].x * canvas.width, nodes[i].y * canvas.height);
-                ctx.lineTo(nodes[i + 1].x * canvas.width, nodes[i + 1].y * canvas.height);
-                ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(nodes[i].x * canvas.width, nodes[i].y * canvas.height);
+                ctx.lineTo(nodes[i + 1].x * canvas.width, nodes[i + 1].y * canvas.height); ctx.stroke();
             }
-
-            // 绘制粒子
             ctx.fillStyle = '#10b981';
-            particles.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-                ctx.fill();
-            });
-
-            // 绘制节点
+            particles.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill(); });
             nodes.forEach(node => {
-                const x = node.x * canvas.width;
-                const y = node.y * canvas.height;
-                const radius = 30;
-
-                // 发光效果
-                if (node.evolving) {
-                    ctx.shadowColor = '#ec4899';
-                    ctx.shadowBlur = 20;
-                }
-
-                // 节点圆
-                ctx.fillStyle = node.color;
-                ctx.beginPath();
-                ctx.arc(x, y, radius, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.shadowBlur = 0;
-
-                // 标签
-                ctx.fillStyle = '#fff';
-                ctx.font = '10px monospace';
-                ctx.textAlign = 'center';
+                const x = node.x * canvas.width; const y = node.y * canvas.height; const radius = 30;
+                if (node.evolving) { ctx.shadowColor = '#ec4899'; ctx.shadowBlur = 20; }
+                ctx.fillStyle = node.color; ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0; ctx.fillStyle = '#fff'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
                 ctx.fillText(node.label, x, y + 4);
-
-                // Hash
-                if (node.hash) {
-                    ctx.fillStyle = '#64748b';
-                    ctx.font = '8px monospace';
-                    ctx.fillText(node.hash, x, y + 50);
-                }
+                if (node.hash) { ctx.fillStyle = '#64748b'; ctx.font = '8px monospace'; ctx.fillText(node.hash, x, y + 50); }
             });
         }
 
-        // 粒子动画
         function animateParticles() {
-            if (Math.random() < 0.1) {
-                particles.push({
-                    x: nodes[0].x * canvas.width,
-                    y: nodes[0].y * canvas.height,
-                    progress: 0
-                });
-            }
-
+            if (Math.random() < 0.1) { particles.push({ x: nodes[0].x * canvas.width, y: nodes[0].y * canvas.height, progress: 0 }); }
             particles = particles.filter(p => {
-                p.progress += 0.02;
-                if (p.progress >= 1) return false;
-
-                const idx = Math.floor(p.progress * (nodes.length - 1));
-                const nextIdx = Math.min(idx + 1, nodes.length - 1);
+                p.progress += 0.02; if (p.progress >= 1) return false;
+                const idx = Math.floor(p.progress * (nodes.length - 1)); const nextIdx = Math.min(idx + 1, nodes.length - 1);
                 const localProgress = (p.progress * (nodes.length - 1)) % 1;
-
                 p.x = (nodes[idx].x + (nodes[nextIdx].x - nodes[idx].x) * localProgress) * canvas.width;
                 p.y = (nodes[idx].y + (nodes[nextIdx].y - nodes[idx].y) * localProgress) * canvas.height;
                 return true;
             });
-
-            drawTopology();
-            requestAnimationFrame(animateParticles);
+            drawTopology(); requestAnimationFrame(animateParticles);
         }
 
-        // 进化动画
         function evolve() {
             const filterNode = nodes.find(n => n.id === 'filter');
-            filterNode.evolving = true;
-            filterNode.hash = 'NEW' + Math.random().toString(36).substr(2, 4);
-            filterNode.color = '#ec4899';
-
-            // 更新时间轴
+            filterNode.evolving = true; filterNode.hash = 'NEW' + Math.random().toString(36).substr(2, 4); filterNode.color = '#ec4899';
             const timeline = document.getElementById('timeline');
             document.querySelectorAll('.timeline-node').forEach(n => n.classList.remove('current'));
-            const newNode = document.createElement('span');
-            newNode.className = 'timeline-arrow';
-            newNode.textContent = '→';
-            timeline.appendChild(newNode);
-
-            const versionNode = document.createElement('div');
-            versionNode.className = 'timeline-node current';
+            const newNode = document.createElement('span'); newNode.className = 'timeline-arrow'; newNode.textContent = '→'; timeline.appendChild(newNode);
+            const versionNode = document.createElement('div'); versionNode.className = 'timeline-node current';
             versionNode.innerHTML = `<div class="version">v${document.querySelectorAll('.timeline-node').length + 1}</div><div class="hash">${filterNode.hash}</div>`;
             timeline.appendChild(versionNode);
-
-            setTimeout(() => {
-                filterNode.evolving = false;
-                filterNode.color = '#8b5cf6';
-            }, 2000);
+            setTimeout(() => { filterNode.evolving = false; filterNode.color = '#8b5cf6'; }, 2000);
         }
 
-        // 灰度发布
         function updateCanary(value) {
             document.getElementById('canary-v1').style.width = (100 - value) + '%';
             document.getElementById('canary-v1').textContent = `v1 (${100 - value}%)`;
@@ -650,67 +650,34 @@ inode = 7335321
             document.getElementById('canary-v2').textContent = value > 20 ? `v2 (${value}%)` : '';
         }
 
-        // 模拟崩溃
         function simulateCrash() {
             const indicator = document.getElementById('status-indicator');
             const statusText = document.getElementById('status-text');
             const recoveryTime = document.getElementById('recovery-time');
-
             indicator.className = 'status-indicator crashed';
-            statusText.textContent = '⚠️ 节点崩溃!';
-            recoveryTime.textContent = '';
-
+            statusText.textContent = I18N[currentLang]['status-crashed']; recoveryTime.textContent = '';
             const start = performance.now();
-
+            setTimeout(() => { indicator.className = 'status-indicator recovering'; statusText.textContent = I18N[currentLang]['status-recovering']; }, 100);
             setTimeout(() => {
-                indicator.className = 'status-indicator recovering';
-                statusText.textContent = '🔄 自愈中...';
-            }, 100);
-
-            setTimeout(() => {
-                indicator.className = 'status-indicator';
-                statusText.textContent = '✅ 系统已恢复';
+                indicator.className = 'status-indicator'; statusText.textContent = I18N[currentLang]['status-recovered'];
                 const elapsed = (performance.now() - start).toFixed(0);
-                recoveryTime.textContent = `恢复耗时: ${elapsed}ms (ln -sf 原子切换)`;
+                recoveryTime.textContent = `${I18N[currentLang]['recovery-msg']}: ${elapsed}ms ${I18N[currentLang]['recovery-sub']}`;
             }, 300);
         }
 
-        // 版本切换
-        function switchVersion(v) {
-            document.querySelectorAll('.timeline-node').forEach((n, i) => {
-                n.classList.toggle('current', i === v - 1);
-            });
-        }
+        function switchVersion(v) { document.querySelectorAll('.timeline-node').forEach((n, i) => { n.classList.toggle('current', i === v - 1); }); }
 
-        // 吞吐量图
         function initThroughput() {
             const container = document.getElementById('throughput-bars');
             for (let i = 0; i < 30; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'throughput-bar';
-                bar.style.height = '20%';
-                container.appendChild(bar);
+                const bar = document.createElement('div'); bar.className = 'throughput-bar'; bar.style.height = '20%'; container.appendChild(bar);
             }
-
-            setInterval(() => {
-                const bars = container.querySelectorAll('.throughput-bar');
-                bars.forEach(bar => {
-                    bar.style.height = (20 + Math.random() * 60) + '%';
-                });
-            }, 500);
+            setInterval(() => { container.querySelectorAll('.throughput-bar').forEach(bar => { bar.style.height = (20 + Math.random() * 60) + '%'; }); }, 500);
         }
 
-        // 添加插槽
-        function addSlot() {
-            alert('🔌 新逻辑热插入!\n\n在 ALIN 中，只需:\nln -sf node_crypto active/05_crypto\n\n无需重启，即插即用!');
-        }
+        function addSlot() { alert(I18N[currentLang]['add-slot-msg']); }
 
-        // 初始化
-        window.onload = () => {
-            resizeCanvas();
-            animateParticles();
-            initThroughput();
-        };
+        window.onload = () => { resizeCanvas(); animateParticles(); initThroughput(); updateUI(); };
         window.onresize = resizeCanvas;
     </script>
 </body>

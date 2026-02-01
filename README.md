@@ -1,179 +1,49 @@
 <div align="center">
 
 # ⚛️ ALIN
-
 ### Atomic Logic Inode Network
-
+**A Decoupled Computing Paradigm Based on OS Atomic Characteristics**
 *基于操作系统原子特性的解耦合计算范式*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux-blue.svg)]()
 [![Language](https://img.shields.io/badge/Language-C%20%7C%20Python%20%7C%20Shell-green.svg)]()
 
-[🎮 在线演示](https://chaizhihan.github.io/Orange/) | [📖 文档](#架构概述) | [🚀 快速开始](#快速开始)
+[🎮 Online Demo / 在线演示](https://chaizhihan.github.io/Orange/) | [📖 Documentation / 文档](#architecture-specification-架构说明书) | [🚀 Quick Start / 快速开始](#quick-start-快速开始)
+
+---
+
+**[English](#architecture-specification-架构说明书)** | **[简体中文](#架构说明书-architecture-specification)**
 
 </div>
 
 ---
 
-## 📖 架构说明书 (Architecture Specification)
+## 📖 Architecture Specification / 架构说明书
 
+ALIN architecture decomposes complex real-time computing tasks into three abstract layers, achieving decoupling of logic and execution through atomic path routing.
 ALIN 架构将复杂的实时计算任务拆解为三个抽象层，通过原子化路径路由实现逻辑与执行的解耦合。
 
-### 1. 核心定义 (Core Concepts)
+### 1. Core Concepts / 核心定义
 
-*   **逻辑节点 (Logic Nodes)**: 存储在物理介质上的不可变计算单元（脚本、二进制、或容器镜像）。
-*   **原子路由 (Atomic Router)**: 利用操作系统文件系统的符号链接 (Symlink) 或硬链接实现的“逻辑指针”。
-*   **状态总线 (State Bus)**: 跨越逻辑切换周期、持续存在的内存空间或数据流通道。
-
----
-
-### 2. 系统拓扑图 (Topology)
-
-在 ALIN 架构中，数据不是流向特定的“代码文件”，而是流向一个虚路径 (Virtual Path)。
-
-**数据流向**: 输入 $I$ $\rightarrow$ 虚路径端口 $P$ (当前指向 Node A) $\rightarrow$ 处理结果 $O$ + 持久状态 $S$。
-
-**切换过程**: 外部指令 $\rightarrow$ 修改 $P$ 的指向 $\rightarrow$ $P$ 瞬间指向 Node B（Node A 的进程无感完成最后一次计算后销毁，新进程无缝接手）。
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         ALIN 拓扑                               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   ┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────┐  │
-│   │ Node A  │────▶│ Node B  │────▶│ Node C  │────▶│ Node D  │  │
-│   │ Inode:1 │     │ Inode:2 │     │ Inode:3 │     │ Inode:4 │  │
-│   └─────────┘     └────┬────┘     └─────────┘     └─────────┘  │
-│                        │                                        │
-│                        ▼ 热切换                                 │
-│                   ┌─────────┐                                   │
-│                   │ Node B' │                                   │
-│                   │ Inode:5 │                                   │
-│                   └─────────┘                                   │
-│                                                                  │
-│   [调度器] ←── stdin/stdout ──→ [状态总线]                     │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+*   **Logic Nodes / 逻辑节点**: Immutable computing units (scripts, binaries, or container images) stored on physical media.
+    存储在物理介质上的不可变计算单元（脚本、二进制、或容器镜像）。
+*   **Atomic Router / 原子路由**: Logical pointers implemented using OS filesystem symbolic links (symlinks) or hard links.
+    利用操作系统文件系统的符号链接 (Symlink) 或硬链接实现的“逻辑指针”。
+*   **State Bus / 状态总线**: Persistent memory spaces or data streams that survive across logic switching cycles.
+    跨越逻辑切换周期、持续存在的内存空间或数据流通道。
 
 ---
 
-### 3. 通用接口定义 (Interface Definitions)
-
-#### A. 节点执行接口 (Node Execution Interface)
-
-任何 ALIN 兼容节点必须实现以下输入输出规范：
-
-```plaintext
-Input:  (data_payload, context_state)
-Output: (result_payload, next_state)
-```
-
-*   **data_payload**: 当前迭代的输入数据。
-*   **context_state**: 从上一个节点或上一次迭代继承的“记忆”。
-
-#### B. 路由器控制接口 (Routing Control Interface)
-
-这是 ALIN 架构最核心的“热替换”接口：
-
-| 接口方法 | 参数 | 说明 |
-| :--- | :--- | :--- |
-| `swap_logic` | `path_alias`, `target_node_id` | 利用 `ln -sf` 或 `rename()` 原子性地修改路由指向。 |
-| `health_check` | `path_alias` | 验证当前路由指向的节点是否处于“就绪”状态。 |
-| `rollback` | `path_alias` | 发生异常时，瞬间切回上一个已知的稳定 Inode 指向。 |
-
-#### C. 状态持久化接口 (State Persistence Interface)
-
-1.  **Freeze**: 逻辑切换触发时，锁定当前状态。
-2.  **Snapshot**: 将状态序列化或映射到共享内存。
-3.  **Restore**: 新逻辑节点启动后，首先从公共区域拉取 Snapshot。
-
----
-
-### 4. 架构的三大定律 (The Three Laws of ALIN)
-
-1.  **不可变性定律**: 逻辑节点一旦部署就不允许原地修改。所有的更新必须通过“创建新节点 + 修改路由”完成。
-2.  **原子性定律**: 路由切换必须由操作系统的原子操作完成，确保系统中不存在“中间态”。
-3.  **解耦定律**: 计算逻辑不应知道自己是否正在被“热替换”，也不应关心是哪个工具把它运行起来的。
-
----
-
-## ✨ 核心理念 (Philosophy)
-
-ALIN 将**文件系统的 Inode**作为计算的基本单元，通过**符号链接(Symlink)**实现逻辑的**原子级热切换**。
-
-```
-传统架构:  重启服务 → 中断连接 → 冷启动 → 恢复状态
-ALIN架构:  ln -sf new_logic active/ → 完成! (< 1ms, 零中断)
-```
-
----
-
-## 🚀 快速开始
-
-### 安装
-
-```bash
-git clone https://github.com/chaizhihan/Orange.git
-cd Orange
-```
-
-### 运行演示
-
-```bash
-# 流处理引擎演示 (日志分析)
-./scripts/demo_stream.sh
-
-# 图像处理管道演示
-./scripts/demo_image.sh
-```
-
-### 查看 Web Dashboard
-
-GitHub Pages: [https://chaizhihan.github.io/Orange/](https://chaizhihan.github.io/Orange/)
-
-本地运行:
-```bash
-cd docs && python3 -m http.server 8080
-# 打开 http://localhost:8080
-```
-
----
-
-## 📦 项目结构
-
-```
-atomicLogicInodeNetwork/
-├── alin/
-│   ├── src/                    # 源代码
-│   │   ├── parsers/            # 解析节点
-│   │   ├── filters/            # 过滤节点
-│   │   ├── aggregators/        # 聚合节点
-│   │   ├── alerters/           # 告警节点
-│   │   └── image/              # 图像处理节点
-│   ├── nodes/                  # 编译后的节点
-│   ├── active/                 # 当前活跃的链接
-│   └── state/                  # 状态持久化
-├── scripts/
-│   ├── alin_run.sh             # 调度引擎
-│   ├── alin_link.sh            # 热更新控制器
-│   ├── alin_stream.sh          # 流处理驱动
-│   └── demo_*.sh               # 演示脚本
-├── web/                        # Web Dashboard
-│   ├── index.html              # 流处理仪表盘
-│   └── image_dashboard.html    # 图像处理仪表盘
-└── docs/                       # 文档
-```
-
----
-
-## 🎬 Advanced Visualization 高级演示
+## 🎬 Advanced Visualization / 高级演示
 
 ### ⚛️ ALIN 3D Narrative - The Paradigm Shift (v2)
 **[Launch 3D Experience (3Blue1Brown Style)](https://chaizhihan.github.io/Orange/3d_comparison_v2.html)**
 
 [![3D Narrative Preview](docs/assets/3d_comparison_v2.png)](https://chaizhihan.github.io/Orange/3d_comparison_v2.html)
+
+*A cinematic comparison between Traditional Monolith and ALIN Atomic Logic, quantifying AI comprehension efficiency.*
+*传统巨石架构与 ALIN 原子逻辑的电影级对比，量化 AI 理解效率。*
 
 ### ⚡ ALIN Bitstream Loader - The JTAG Console
 **[Burn Software Logic like FPGA Bitstreams](https://chaizhihan.github.io/Orange/bitstream_dashboard.html)**
@@ -181,17 +51,18 @@ atomicLogicInodeNetwork/
 [![Bitstream Loader Preview](docs/assets/bitstream_loader.png)](https://chaizhihan.github.io/Orange/bitstream_dashboard.html)
 
 *Deploying logic is no longer "installing software"—it's "loading bitstreams" into atomic slots.*
+*部署逻辑不再是“安装软件”，而是向原子插槽中“加载位流”。*
 
 ---
 
-## 🎮 More Examples 示例展示
+## 🎮 More Examples / 示例展示
 
 <table>
 <tr>
-<td>streaming 流处理</td>
-<td>imaging 图像处理</td>
-<td>token 优化器</td>
-<td>evolution 进化</td>
+<td>Streaming / 流处理</td>
+<td>Imaging / 图像处理</td>
+<td>Token Optimizer / 优化器</td>
+<td>Evolution / 逻辑进化</td>
 </tr>
 <tr>
 <td><a href="https://chaizhihan.github.io/Orange/stream_dashboard.html"><img src="docs/assets/stream_dashboard.png"></a></td>
@@ -201,84 +72,63 @@ atomicLogicInodeNetwork/
 </tr>
 </table>
 
-
-
-
-
-
 ---
 
-## 🖥️ 命令行演示
+## ✨ Philosophy / 核心理念
 
-### 流处理
-```bash
-./scripts/alin_link.sh swap_logic 01_parse parse_json
-./scripts/alin_link.sh swap_logic 02_filter filter_level
-echo '{"level":"ERROR","msg":"test"}' | ./scripts/alin_run.sh
+ALIN treats **filesystem Inodes** as the fundamental unit of computation, achieving **atomic hot-swapping** of logic via **Symbolic Links (Symlink)**.
+ALIN 将**文件系统的 Inode**作为计算的基本单元，通过**符号链接(Symlink)**实现逻辑的**原子级热切换**。
+
 ```
+Traditional:  Restart Service → Break Connection → Cold Start → Restore State
+ALIN:         ln -sf new_logic active/ → Done! (< 1ms, Zero Interruption)
 
-### 图像处理
-```bash
-echo '{"path":"input.jpg"}' | \
-    alin/nodes/decode_image_py | \
-    alin/nodes/filter_sepia_py | \
-    alin/nodes/encode_png_py
-```
-
-
----
-
-## 🔥 热切换演示
-
-```bash
-# 步骤 1: 初始配置 - 只显示 ERROR
-export ALIN_FILTER_LEVEL=ERROR
-echo '{"level":"WARN","msg":"test"}' | ./scripts/alin_run.sh
-# (无输出 - WARN 被过滤)
-
-# 步骤 2: 热切换 - 显示 WARN 及以上
-export ALIN_FILTER_LEVEL=WARN
-echo '{"level":"WARN","msg":"test"}' | ./scripts/alin_run.sh
-# (显示告警 - 无需重启!)
+传统架构:  重启服务 → 中断连接 → 冷启动 → 恢复状态
+ALIN架构:  ln -sf new_logic active/ → 完成! (< 1ms, 零中断)
 ```
 
 ---
 
-## 🌐 Web Dashboard
+## 🚀 Quick Start / 快速开始
 
-<div align="center">
+### Installation / 安装
 
-### 流处理仪表盘
+```bash
+git clone https://github.com/chaizhihan/Orange.git
+cd Orange
+```
 
-实时监控日志流、事件统计和管道拓扑。
+### Running Demos / 运行演示
 
-### 图像处理仪表盘
+```bash
+# Stream processing demo (Log analysis) / 流处理引擎演示
+./scripts/demo_stream.sh
 
-实时预览滤镜效果，一键热切换。
-
-</div>
-
----
-
-## 📖 文档
-
-- [架构说明书 (Specification)](docs/SPECIFICATION.md)
-- [环境构建指令提纲 (Agent Prompt Guide)](docs/PROMPT_GUIDE.md)
-- [架构设计深度解析 (Architecture Detail)](docs/ARCHITECTURE.md)
-- [API 参考](docs/API.md)
-- [开发指南](docs/CONTRIBUTING.md)
+# Image processing pipeline demo / 图像处理管道演示
+./scripts/demo_image.sh
+```
 
 ---
 
-## 🤝 贡献
+## 🤖 AI Understanding Layer / AI 理解层
 
-欢迎贡献! 请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详情。
+ALIN is **AI-Native**. We provide structured metadata and simplified protocols to reduce AI context overhead by **95%+**.
+ALIN 是 **AI 原生**的。我们提供结构化元数据和简化协议，将 AI 上下文开销降低 **95%** 以上。
+
+- [AI Quick Guide / AI 快速指南](AI_README.md)
+- [Agent Protocol / Agent 协议](AGENTS.md)
 
 ---
 
-## 📄 许可证
+## 🤝 Contributing / 贡献
 
-MIT License - 详见 [LICENSE](LICENSE)
+Contributions are welcome! / 欢迎贡献! Please check [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+## 📄 License / 许可证
+
+MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 

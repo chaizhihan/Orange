@@ -203,15 +203,22 @@
 
 <body>
     <div class="header">
-        <h1>⚛️ ALIN Token Optimizer</h1>
-        <p>展示 ALIN 架构如何减少 AI Agent 的 Token 消耗</p>
+        <h1 data-i18n="header-title">⚛️ ALIN Token Optimizer</h1>
+        <div class="flex items-center justify-center gap-4 mt-2"
+            style="display: flex; align-items: center; justify-content: center; gap: 1rem;">
+            <p data-i18n="header-subtitle">展示 ALIN 架构如何减少 AI Agent 的 Token 消耗</p>
+            <button onclick="toggleLang()"
+                style="background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 0.2rem 0.8rem; border-radius: 999px; cursor: pointer; font-size: 0.6rem; text-transform: uppercase;">
+                <span id="lang-label">EN / 中文</span>
+            </button>
+        </div>
     </div>
 
     <div class="container">
         <!-- 传统架构 -->
         <div class="panel traditional">
             <div class="panel-header">
-                <span class="panel-title">📦 传统架构 (Traditional)</span>
+                <span class="panel-title" data-i18n="panel-trad-title">📦 传统架构 (Traditional)</span>
                 <span class="token-badge" id="traditional-tokens">0 tokens</span>
             </div>
             <div class="code-view">
@@ -223,14 +230,14 @@
         <div class="panel stats-panel">
             <div class="stat-block">
                 <div class="stat-value" id="traditional-count">0</div>
-                <div class="stat-label">传统 Tokens</div>
+                <div class="stat-label" data-i18n="stat-trad-label">传统 Tokens</div>
             </div>
 
             <div class="arrow">→</div>
 
             <div class="stat-block">
                 <div class="stat-value" id="alin-count">0</div>
-                <div class="stat-label">ALIN Tokens</div>
+                <div class="stat-label" data-i18n="stat-alin-label">ALIN Tokens</div>
             </div>
 
             <div class="progress-bar">
@@ -239,14 +246,14 @@
 
             <div class="stat-block">
                 <div class="stat-value savings" id="savings">0%</div>
-                <div class="stat-label">Token 节省</div>
+                <div class="stat-label" data-i18n="stat-savings-label">Token 节省</div>
             </div>
         </div>
 
         <!-- ALIN 架构 -->
         <div class="panel alin">
             <div class="panel-header">
-                <span class="panel-title">⚛️ ALIN 架构 (.meta)</span>
+                <span class="panel-title" data-i18n="panel-alin-title">⚛️ ALIN 架构 (.meta)</span>
                 <span class="token-badge" id="alin-tokens">0 tokens</span>
             </div>
             <div class="code-view">
@@ -256,148 +263,138 @@
     </div>
 
     <script>
-        // 传统代码示例 (模拟大型源文件)
-        const traditionalCode = `// filter_level.py - 日志级别过滤器
-import json
-import sys
-import os
-from typing import Optional, Dict, Any
+        let currentLang = 'en';
+        const I18N = {
+            en: {
+                "header-title": "⚛️ ALIN Token Optimizer",
+                "header-subtitle": "Visualizing how ALIN architecture minimizes AI Agent token usage",
+                "panel-trad-title": "📦 Traditional Architecture",
+                "panel-alin-title": "⚛️ ALIN Architecture (.meta)",
+                "stat-trad-label": "Traditional Tokens",
+                "stat-alin-label": "ALIN Tokens",
+                "stat-savings-label": "Token Savings",
+                "trad-comment-1": "// filter_level.py - Log level filter",
+                "trad-comment-2": "\"\"\"Log level filter\n\n    Filters log events based on min level.\n    Supports dynamic config via env.\n    \"\"\"",
+                "alin-desc": "Log level filter, filters events based on min level.",
+                "alin-input": "JSON events",
+                "alin-output": "Same as input, filtered",
+                "alin-config": "Min log level (DEBUG/INFO/WARN/ERROR)",
+                "alin-ai-1": "Change level: export ALIN_FILTER_LEVEL=WARN",
+                "alin-ai-2": "Hot-swap logic: ./scripts/alin_loader.sh ..."
+            },
+            zh: {
+                "header-title": "⚛️ ALIN Token 优化器",
+                "header-subtitle": "展示 ALIN 架构如何极致减少 AI Agent 的 Token 消耗",
+                "panel-trad-title": "📦 传统架构 (复杂代码块)",
+                "panel-alin-title": "⚛️ ALIN 架构 (.meta 协议)",
+                "stat-trad-label": "传统 Token 消耗",
+                "stat-alin-label": "ALIN Token 消耗",
+                "stat-savings-label": "Token 节省率",
+                "trad-comment-1": "// filter_level.py - 日志级别过滤器",
+                "trad-comment-2": "\"\"\"日志级别过滤器\n\n    根据配置的最小级别过滤日志事件。\n    支持通过环境变量动态配置。\n    \"\"\"",
+                "alin-desc": "日志级别过滤器，根据最小级别过滤事件。",
+                "alin-input": "JSON 事件流",
+                "alin-output": "通过过滤的事件原样输出",
+                "alin-config": "最小日志级别 (DEBUG/INFO/WARN/ERROR)",
+                "alin-ai-1": "修改过滤级别: export ALIN_FILTER_LEVEL=WARN",
+                "alin-ai-2": "热切换逻辑: ./scripts/alin_loader.sh ..."
+            }
+        };
+
+        function toggleLang() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateUI();
+            startDemo(); // Re-trigger typing demo with new language
+        }
+
+        function updateUI() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = I18N[currentLang][key];
+            });
+            document.getElementById('lang-label').innerText = currentLang === 'en' ? 'EN / 中文' : '中文 / EN';
+        }
+
+        function getCodeSample() {
+            const trad = `// filter_level.py
+import json, sys, os
 from enum import IntEnum
 
 class LogLevel(IntEnum):
-    DEBUG = 0
-    INFO = 1
-    WARN = 2
-    ERROR = 3
-    FATAL = 4
+    DEBUG, INFO, WARN, ERROR, FATAL = 0, 1, 2, 3, 4
+
+${I18N[currentLang]['trad-comment-2']}
 
 class LogFilter:
-    """日志级别过滤器
+    def __init__(self, min_lvl="INFO"):
+        self.min_lvl = self._parse(min_lvl)
     
-    根据配置的最小级别过滤日志事件。
-    支持通过环境变量动态配置。
-    """
-    
-    def __init__(self, min_level: str = "INFO"):
-        self.min_level = self._parse_level(min_level)
-        self._stats = {"processed": 0, "passed": 0, "filtered": 0}
-    
-    def _parse_level(self, level: str) -> LogLevel:
-        mapping = {
-            "DEBUG": LogLevel.DEBUG,
-            "INFO": LogLevel.INFO,
-            "WARN": LogLevel.WARN,
-            "WARNING": LogLevel.WARN,
-            "ERROR": LogLevel.ERROR,
-            "FATAL": LogLevel.FATAL,
-            "CRITICAL": LogLevel.FATAL
-        }
-        return mapping.get(level.upper(), LogLevel.INFO)
-    
-    def filter(self, event: Dict[str, Any]) -> Optional[Dict]:
-        self._stats["processed"] += 1
-        
-        level_str = event.get("level", "INFO")
-        event_level = self._parse_level(level_str)
-        
-        if event_level >= self.min_level:
-            self._stats["passed"] += 1
-            return event
-        
-        self._stats["filtered"] += 1
-        return None
-    
-    def get_stats(self) -> Dict[str, int]:
-        return self._stats.copy()
+    def filter(self, event):
+        lvl = self._parse(event.get("level", "INFO"))
+        return event if lvl >= self.min_lvl else None
 
 def main():
-    min_level = os.environ.get("ALIN_FILTER_LEVEL", "INFO")
-    filter_instance = LogFilter(min_level)
-    
-    for line in sys.stdin:
-        try:
-            event = json.loads(line.strip())
-            result = filter_instance.filter(event)
-            if result:
-                print(json.dumps(result))
-                sys.stdout.flush()
-        except json.JSONDecodeError:
-            sys.stderr.write(f"Invalid JSON: {line}")
-            continue
-
-if __name__ == "__main__":
-    main()`;
-
-        // ALIN .meta 文件
-        const alinMeta = `# ALIN Node Metadata
-# filter_level.meta
-
+    f = LogFilter(os.getenv("ALIN_LEVEL", "INFO"))
+    for l in sys.stdin:
+        e = json.loads(l)
+        if f.filter(e): print(json.dumps(e))
+`;
+            const alin = `# ALIN Node Metadata
 [node]
 name = filter_level
 hash = abc12345
-inode = 7335321
 
 [description]
-日志级别过滤器，根据最小级别过滤事件
+${I18N[currentLang]['alin-desc']}
 
 [interface]
-input = JSON {"level": "ERROR", "msg": "..."}
-output = 通过过滤的事件原样输出
+input = ${I18N[currentLang]['alin-input']}
+output = ${I18N[currentLang]['alin-output']}
 
 [config]
-ALIN_FILTER_LEVEL = 最小日志级别 (DEBUG/INFO/WARN/ERROR)
+ALIN_LEVEL = ${I18N[currentLang]['alin-config']}
 
 [ai_context]
-修改过滤级别: export ALIN_FILTER_LEVEL=WARN
-热切换: ./scripts/alin_link.sh swap_logic 02_filter filter_level`;
+${I18N[currentLang]['alin-ai-1']}
+${I18N[currentLang]['alin-ai-2']}`;
 
-        // Token 估算 (约 4 字符 = 1 token)
-        function estimateTokens(text) {
-            return Math.ceil(text.length / 4);
+            return { trad, alin };
         }
 
-        // 打字机效果
-        async function typeText(element, text, speed = 5) {
+        function estimateTokens(text) { return Math.ceil(text.length / 4); }
+
+        let typing = false;
+        async function typeText(element, text, speed = 2) {
             element.textContent = '';
             for (let i = 0; i < text.length; i++) {
+                if (typing && i === 0) element.textContent = ''; // Reset if a new one starts
                 element.textContent += text[i];
-                if (i % 50 === 0) {
-                    await new Promise(r => setTimeout(r, speed));
-                }
+                if (i % 30 === 0) await new Promise(r => setTimeout(r, speed));
             }
         }
 
-        // 更新统计
         function updateStats(traditionalTokens, alinTokens) {
             document.getElementById('traditional-count').textContent = traditionalTokens;
             document.getElementById('alin-count').textContent = alinTokens;
             document.getElementById('traditional-tokens').textContent = `${traditionalTokens} tokens`;
             document.getElementById('alin-tokens').textContent = `${alinTokens} tokens`;
-
             const savings = Math.round((1 - alinTokens / traditionalTokens) * 100);
             document.getElementById('savings').textContent = `${savings}%`;
             document.getElementById('savings-bar').style.width = `${savings}%`;
         }
 
-        // 启动演示
         async function startDemo() {
+            const samples = getCodeSample();
             const traditionalEl = document.getElementById('traditional-code');
             const alinEl = document.getElementById('alin-code');
-
-            // 同时显示两边
             await Promise.all([
-                typeText(traditionalEl, traditionalCode, 2),
-                typeText(alinEl, alinMeta, 10)
+                typeText(traditionalEl, samples.trad, 1),
+                typeText(alinEl, samples.alin, 5)
             ]);
-
-            // 更新统计
-            const tTokens = estimateTokens(traditionalCode);
-            const aTokens = estimateTokens(alinMeta);
-            updateStats(tTokens, aTokens);
+            updateStats(estimateTokens(samples.trad), estimateTokens(samples.alin));
         }
 
-        // 页面加载后启动
-        setTimeout(startDemo, 500);
+        window.onload = () => { updateUI(); setTimeout(startDemo, 500); };
     </script>
 </body>
 

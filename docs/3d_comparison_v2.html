@@ -133,17 +133,27 @@
                 <h1 class="text-4xl font-bold tracking-tight">
                     <span style="color: var(--3b1b-blue)">ALIN</span>
                     <span class="text-white/20">/</span>
-                    <span style="color: var(--3b1b-red)">Architecture</span>
+                    <span style="color: var(--3b1b-red)" data-i18n="header-title">Architecture</span>
                 </h1>
-                <p class="text-white/40 mt-1 text-sm">Quantifying the Paradigm Shift</p>
+                <p class="text-white/40 mt-1 text-sm" data-i18n="header-subtitle">Quantifying the Paradigm Shift</p>
             </div>
 
-            <nav class="flex gap-3 bg-black/40 p-2 rounded-xl backdrop-blur-md border border-white/5">
-                <button class="btn-sequence active" onclick="playSequence('intro', 0)">Introduction</button>
-                <button class="btn-sequence" onclick="playSequence('monolith', 1)">The Monolith</button>
-                <button class="btn-sequence" onclick="playSequence('network', 2)">The Network</button>
-                <button class="btn-sequence" onclick="playSequence('evolution', 3)">Fluid Logic</button>
-            </nav>
+            <div class="flex flex-col items-end gap-3">
+                <nav class="flex gap-3 bg-black/40 p-2 rounded-xl backdrop-blur-md border border-white/5">
+                    <button class="btn-sequence active" data-i18n="nav-intro"
+                        onclick="playSequence('intro', 0)">Introduction</button>
+                    <button class="btn-sequence" data-i18n="nav-monolith" onclick="playSequence('monolith', 1)">The
+                        Monolith</button>
+                    <button class="btn-sequence" data-i18n="nav-network" onclick="playSequence('network', 2)">The
+                        Network</button>
+                    <button class="btn-sequence" data-i18n="nav-evolution" onclick="playSequence('evolution', 3)">Fluid
+                        Logic</button>
+                </nav>
+                <button onclick="toggleLang()"
+                    class="text-[10px] bg-white/5 border border-white/10 px-3 py-1 rounded-full uppercase tracking-widest hover:bg-white/10 transition-colors">
+                    <span id="lang-label">EN / 中文</span>
+                </button>
+            </div>
         </header>
 
         <!-- Narrative Section -->
@@ -167,13 +177,14 @@
     <!-- AI Token Detector Panel -->
     <div id="ai-detector" class="opacity-0 translate-y-20">
         <div class="flex justify-between items-center mb-4">
-            <span class="text-xs font-bold text-white/50">AI COMPREHENSION</span>
-            <span class="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase">Realtime Scan</span>
+            <span class="text-xs font-bold text-white/50" data-i18n="ai-label">AI COMPREHENSION</span>
+            <span class="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase" data-i18n="ai-realtime">Realtime
+                Scan</span>
         </div>
 
         <div class="mb-4">
             <div class="flex justify-between text-[11px] mb-1">
-                <span>Context Overhead</span>
+                <span data-i18n="ai-overhead">Context Overhead</span>
                 <span id="token-count" class="font-bold">10,240 tokens</span>
             </div>
             <div class="token-bar-container">
@@ -196,6 +207,34 @@
         // --- 1. Scene Initialization ---
         let scene, camera, renderer, clock;
         let monolith, networkGroup, nodes = [], links = [], particles = [];
+        let currentLang = 'en';
+
+        const I18N = {
+            en: {
+                "header-title": "Architecture",
+                "header-subtitle": "Quantifying the Paradigm Shift",
+                "nav-intro": "Introduction",
+                "nav-monolith": "The Monolith",
+                "nav-network": "The Network",
+                "nav-evolution": "Fluid Logic",
+                "ai-label": "AI COMPREHENSION",
+                "ai-realtime": "Realtime Scan",
+                "ai-overhead": "Context Overhead",
+                "lang-toggle": "CN / 中文"
+            },
+            zh: {
+                "header-title": "架构视角",
+                "header-subtitle": "量化范式迁移",
+                "nav-intro": "序言",
+                "nav-monolith": "巨石架构",
+                "nav-network": "原子网络",
+                "nav-evolution": "流体逻辑",
+                "ai-label": "AI 理解度",
+                "ai-realtime": "实时扫描",
+                "ai-overhead": "上下文开销",
+                "lang-toggle": "EN / 英文"
+            }
+        };
 
         const COLORS = {
             bg: 0x1a1b1e,
@@ -243,6 +282,22 @@
             // Initial animation
             gsap.to('#narrative-box', { x: 0, opacity: 1, duration: 1.5, ease: 'power4.out', delay: 0.5 });
             gsap.to('#ai-detector', { y: 0, opacity: 1, duration: 1.2, ease: 'back.out(1.7)', delay: 1 });
+
+            updateUI();
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'en' ? 'zh' : 'en';
+            updateUI();
+            playSequence(currentSequence, currentIndex, true); // Refresh current step text
+        }
+
+        function updateUI() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = I18N[currentLang][key];
+            });
+            document.getElementById('lang-label').innerText = currentLang === 'en' ? 'EN / 中文' : '中文 / EN';
         }
 
         // --- 2. Architecture Models ---
@@ -354,53 +409,99 @@
 
         // --- 4. Narrative Logic ---
         let currentSequence = 'intro';
+        let currentIndex = 0;
 
-        const STORIES = [
-            {
-                tag: "Act I: The Concept",
-                title: "Traditional Monolith",
-                content: "Everything is tightly coupled. Changing a small part of the logic requires rebuilding the entire universe of the app. It's <span class='formula-text'>static, heavy, and fragile</span>.",
-                cam: { x: -8, y: 4, z: 12 },
-                tokens: 10240,
-                color: 'red',
-                msg: 'High Context Overhead',
-                insight: 'AI must parse thousands of interdependent lines to guarantee safety...'
-            },
-            {
-                tag: "Act II: Deployment Pain",
-                title: "Software as a Black Box",
-                content: "Updating means a cold restart. For seconds or minutes, the system is dead. The entire state is lost and must be reconstituted.",
-                cam: { x: -12, y: 2, z: 8 },
-                tokens: 8192,
-                color: 'red',
-                msg: 'System Downtime Imminent',
-                insight: 'Memory footprint is opaque. AI cannot safely manipulate state during transition.'
-            },
-            {
-                tag: "Act III: The ALIN Paradigm",
-                title: "The Atomic Network",
-                content: "Logic is broken into <span style='color: var(--3b1b-blue)'>Atomic Inodes</span>. They exist as independent entities in the file system, connected by mere references.",
-                cam: { x: 12, y: 4, z: 12 },
-                tokens: 512,
-                color: 'green',
-                msg: 'Optimal AI Comprehension',
-                insight: 'Context limited to specific Node interface. 95% token efficiency gain.'
-            },
-            {
-                tag: "Act IV: Fluid Logic",
-                title: "Nanosecond Evolution",
-                content: "Updating logic is just <span class='formula-text'>ln -sf</span>. The system evolves while running. No downtime, no friction, just pure flow.",
-                cam: { x: 15, y: 2, z: 10 },
-                tokens: 280,
-                color: 'green',
-                msg: 'System Healthy & Fluid',
-                insight: 'Self-healing triggered in 300ms. Inode hash verified. Logic swap complete.'
-            }
-        ];
+        const STORIES = {
+            en: [
+                {
+                    tag: "Act I: The Concept",
+                    title: "Traditional Monolith",
+                    content: "Everything is tightly coupled. Changing a small part of the logic requires rebuilding the entire universe of the app. It's <span class='formula-text'>static, heavy, and fragile</span>.",
+                    cam: { x: -8, y: 4, z: 12 },
+                    tokens: 10240,
+                    color: 'red',
+                    msg: 'High Context Overhead',
+                    insight: 'AI must parse thousands of interdependent lines to guarantee safety...'
+                },
+                {
+                    tag: "Act II: Deployment Pain",
+                    title: "Software as a Black Box",
+                    content: "Updating means a cold restart. For seconds or minutes, the system is dead. The entire state is lost and must be reconstituted.",
+                    cam: { x: -12, y: 2, z: 8 },
+                    tokens: 8192,
+                    color: 'red',
+                    msg: 'System Downtime Imminent',
+                    insight: 'Memory footprint is opaque. AI cannot safely manipulate state during transition.'
+                },
+                {
+                    tag: "Act III: The ALIN Paradigm",
+                    title: "The Atomic Network",
+                    content: "Logic is broken into <span style='color: var(--3b1b-blue)'>Atomic Inodes</span>. They exist as independent entities in the file system, connected by mere references.",
+                    cam: { x: 12, y: 4, z: 12 },
+                    tokens: 512,
+                    color: 'green',
+                    msg: 'Optimal AI Comprehension',
+                    insight: 'Context limited to specific Node interface. 95% token efficiency gain.'
+                },
+                {
+                    tag: "Act IV: Fluid Logic",
+                    title: "Nanosecond Evolution",
+                    content: "Updating logic is just <span class='formula-text'>ln -sf</span>. The system evolves while running. No downtime, no friction, just pure flow.",
+                    cam: { x: 15, y: 2, z: 10 },
+                    tokens: 280,
+                    color: 'green',
+                    msg: 'System Healthy & Fluid',
+                    insight: 'Self-healing triggered in 300ms. Inode hash verified. Logic swap complete.'
+                }
+            ],
+            zh: [
+                {
+                    tag: "第一幕：核心架构",
+                    title: "传统巨石架构 (Monolith)",
+                    content: "所有模块紧密耦合。修改微小的逻辑也需要重新构建整个应用。它是<span class='formula-text'>静态的、沉重且脆弱的</span>。",
+                    cam: { x: -8, y: 4, z: 12 },
+                    tokens: 10240,
+                    color: 'red',
+                    msg: '上下文开销极大',
+                    insight: 'AI 必须解析数千行相互依赖的代码才能保证操作安全...'
+                },
+                {
+                    tag: "第二幕：部署之痛",
+                    title: "软件即黑盒",
+                    content: "更新意味着冷重启。在数秒甚至数分钟内，系统是死寂的。所有的中间状态都会丢失，必须重新构建。",
+                    cam: { x: -12, y: 2, z: 8 },
+                    tokens: 8192,
+                    color: 'red',
+                    msg: '系统停机风险',
+                    insight: '内存足迹不透明。AI 无法在迁移过程中安全地操作状态。'
+                },
+                {
+                    tag: "第三幕：ALIN 范式",
+                    title: "原子化网络",
+                    content: "逻辑被拆解为 <span style='color: var(--3b1b-blue)'>原子 Inodes</span>。它们作为独立实体存在于文件系统中，仅通过引用连接。",
+                    cam: { x: 12, y: 4, z: 12 },
+                    tokens: 512,
+                    color: 'green',
+                    msg: '最优 AI 理解度',
+                    insight: '上下文仅限于特定节点的接口。Token 效率提升 95% 以上。'
+                },
+                {
+                    tag: "第四幕：流体逻辑",
+                    title: "纳秒级进化",
+                    content: "更新逻辑只需执行 <span class='formula-text'>ln -sf</span>。系统在运行时进化。无停机，无摩擦，只有纯粹的流动。",
+                    cam: { x: 15, y: 2, z: 10 },
+                    tokens: 280,
+                    color: 'green',
+                    msg: '系统健康且灵动',
+                    insight: '300ms 内触发自愈。Inode 哈希已验证。逻辑切换完成。'
+                }
+            ]
+        };
 
-        function playSequence(name, index) {
+        function playSequence(name, index, instant = false) {
             currentSequence = name;
-            const step = STORIES[index];
+            currentIndex = index;
+            const step = STORIES[currentLang][index];
 
             // Update UI buttons
             document.querySelectorAll('.btn-sequence').forEach((btn, i) => {
@@ -408,24 +509,30 @@
             });
 
             // Narrative transition
-            gsap.to('#narrative-box', {
-                opacity: 0,
-                x: -50,
-                duration: 0.4,
-                onComplete: () => {
-                    document.getElementById('narrative-tag').innerText = step.tag;
-                    document.getElementById('narrative-title').innerText = step.title;
-                    document.getElementById('narrative-content').innerHTML = step.content;
-                    gsap.to('#narrative-box', { opacity: 1, x: 0, duration: 0.8, ease: 'power2.out' });
-                }
-            });
+            if (instant) {
+                document.getElementById('narrative-tag').innerText = step.tag;
+                document.getElementById('narrative-title').innerText = step.title;
+                document.getElementById('narrative-content').innerHTML = step.content;
+            } else {
+                gsap.to('#narrative-box', {
+                    opacity: 0,
+                    x: -50,
+                    duration: 0.4,
+                    onComplete: () => {
+                        document.getElementById('narrative-tag').innerText = step.tag;
+                        document.getElementById('narrative-title').innerText = step.title;
+                        document.getElementById('narrative-content').innerHTML = step.content;
+                        gsap.to('#narrative-box', { opacity: 1, x: 0, duration: 0.8, ease: 'power2.out' });
+                    }
+                });
+            }
 
             // Camera transition
             gsap.to(camera.position, {
                 x: step.cam.x,
                 y: step.cam.y,
                 z: step.cam.z,
-                duration: 2,
+                duration: instant ? 0.5 : 2,
                 ease: "expo.inOut"
             });
 
