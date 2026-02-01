@@ -1,0 +1,12 @@
+{
+    "project": "Sensor_Baseline_Pipeline",
+    "version": "1.0.0",
+    "description": "Legacy logic for basic sensor processing",
+    "topology": {
+        "01_entry": "stdin",
+        "02_pre": "identity",
+        "03_proc": "filter_level",
+        "04_calc": "identity",
+        "05_out": "stdout"
+    }
+}

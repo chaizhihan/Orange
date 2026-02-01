@@ -175,7 +175,12 @@ atomicLogicInodeNetwork/
 
 [![3D Narrative Preview](docs/assets/3d_comparison_v2.png)](https://chaizhihan.github.io/Orange/3d_comparison_v2.html)
 
-*A cinematic comparison between Traditional Monolith and ALIN Atomic Logic, quantifying AI comprehension efficiency.*
+### ⚡ ALIN Bitstream Loader - The JTAG Console
+**[Burn Software Logic like FPGA Bitstreams](https://chaizhihan.github.io/Orange/bitstream_dashboard.html)**
+
+[![Bitstream Loader Preview](docs/assets/bitstream_loader.png)](https://chaizhihan.github.io/Orange/bitstream_dashboard.html)
+
+*Deploying logic is no longer "installing software"—it's "loading bitstreams" into atomic slots.*
 
 ---
 

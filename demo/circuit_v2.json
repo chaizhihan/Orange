@@ -1,0 +1,12 @@
+{
+    "project": "AI_Accelerated_Pipeline",
+    "version": "2.1.0",
+    "description": "High-efficiency logic with advanced filtering and tokens saving",
+    "topology": {
+        "01_entry": "stdin",
+        "02_pre": "parse_json",
+        "03_proc": "token_optimizer",
+        "04_calc": "agg_count",
+        "05_out": "stdout"
+    }
+}

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIN Bitstream Loader - 数字电路重构控制台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --matrix-green: #00ff41;
+            --burn-blue: #00f2ff;
+            --bg-dark: #050505;
+            --card-dark: #0f0f12;
+            --border-dim: #2a2a30;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #d1d1d1;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .slot-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .slot {
+            height: 120px;
+            background: var(--card-dark);
+            border: 1px solid var(--border-dim);
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all 0.5s;
+            overflow: hidden;
+        }
+
+        .slot.flashing {
+            border-color: var(--burn-blue);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+            background: rgba(0, 242, 255, 0.05);
+        }
+
+        .slot.active {
+            border-color: var(--matrix-green);
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .slot-inode {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 0.4rem;
+        }
+
+        .slot-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #1a1a1f;
+            border-radius: 2px;
+            margin: 2rem 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--burn-blue), var(--matrix-green));
+            transition: width 0.3s;
+        }
+
+        .terminal {
+            background: #000;
+            border: 1px solid var(--border-dim);
+            height: 200px;
+            overflow-y: auto;
+            padding: 1rem;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: var(--matrix-green);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .terminal p {
+            margin: 2px 0;
+        }
+
+        .terminal span {
+            color: #888;
+            margin-right: 0.5rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-dim);
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--burn-blue);
+            background: rgba(0, 242, 255, 0.05);
+        }
+
+        .btn-burn {
+            background: transparent;
+            border: 1px solid var(--burn-blue);
+            color: var(--burn-blue);
+            padding: 0.6rem 2rem;
+            border-radius: 999px;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .btn-burn:hover {
+            background: var(--burn-blue);
+            color: #000;
+            box-shadow: 0 0 20px var(--burn-blue);
+        }
+
+        .hex-scroll {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-size: 0.5rem;
+            color: var(--burn-blue);
+            opacity: 0.1;
+            z-index: 0;
+            pointer-events: none;
+            line-height: 1;
+            overflow: hidden;
+        }
+
+        @keyframes scan {
+            0% {
+                transform: translateY(-100%);
+            }
+
+            100% {
+                transform: translateY(100%);
+            }
+        }
+
+        .badge-live {
+            background: var(--matrix-green);
+            color: #000;
+            font-size: 0.6rem;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body class="p-8">
+    <canvas id="matrix" class="matrix-bg"></canvas>
+
+    <div class="max-w-4xl mx-auto flex flex-col h-full">
+        <header class="flex justify-between items-end mb-12">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tighter text-white">⚡ ALIN <span
+                        style="color: var(--burn-blue)">BITSTREAM</span> LOADER</h1>
+                <p class="text-xs text-gray-500 mt-1 uppercase tracking-widest">Hardware-Level Logic Inode Projection
+                    v1.0</p>
+            </div>
+            <div id="status-badge" style="display: none;">
+                <span class="badge-live">Circuit Live</span>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto">
+            <!-- 插槽展示区 -->
+            <div class="slot-grid mb-12" id="slot-grid">
+                <div class="slot" id="slot-01">
+                    <div class="slot-label">01_entry</div>
+                    <div class="slot-inode">-- empty --</div>
+                </div>
+                <div class="slot" id="slot-02">
+                    <div class="slot-label">02_pre</div>
+                    <div class="slot-inode">-- empty --</div>
+                </div>
+                <div class="slot" id="slot-03">
+                    <div class="slot-label">03_proc</div>
+                    <div class="slot-inode">-- empty --</div>
+                </div>
+                <div class="slot" id="slot-04">
+                    <div class="slot-label">04_calc</div>
+                    <div class="slot-inode">-- empty --</div>
+                </div>
+                <div class="slot" id="slot-05">
+                    <div class="slot-label">05_out</div>
+                    <div class="slot-inode">-- empty --</div>
+                </div>
+            </div>
+
+            <!-- 操作区 -->
+            <div class="grid grid-cols-2 gap-8 mb-8">
+                <div class="drop-zone" id="drop-zone">
+                    <p class="text-sm">拖入 Bitstream (.json)</p>
+                    <p class="text-[10px] text-gray-600 mt-2">模拟 JTAG 位流烧录</p>
+                </div>
+                <div class="flex flex-col justify-center gap-4">
+                    <button class="btn-burn" onclick="loadSimulation('v1')">LOAD CIRCUIT V1 (Legacy)</button>
+                    <button class="btn-burn" onclick="loadSimulation('v2')"
+                        style="border-color: var(--matrix-green); color: var(--matrix-green)">LOAD CIRCUIT V2
+                        (AI-Accelerated)</button>
+                </div>
+            </div>
+
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <!-- 终端日志 -->
+            <div class="terminal" id="terminal">
+                <p><span>[SYS]</span> ALIN JTAG Hardware ready.</p>
+                <p><span>[SYS]</span> Awaiting Bitstream input...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix 效果
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const alphabet = "0123456789ABCDEF";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#0F0";
+            ctx.font = fontSize + "px monospace";
+            for (let i = 0; i < drops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 50);
+
+        // 模拟数据
+        const circuits = {
+            v1: {
+                project: "Sensor_Baseline_Pipeline",
+                version: "1.0.0",
+                topology: {
+                    "01_entry": "stdin",
+                    "02_pre": "identity",
+                    "03_proc": "filter_level",
+                    "04_calc": "identity",
+                    "05_out": "stdout"
+                }
+            },
+            v2: {
+                project: "AI_Accelerated_Pipeline",
+                version: "2.1.0",
+                topology: {
+                    "01_entry": "stdin",
+                    "02_pre": "parse_json",
+                    "03_proc": "token_optimizer",
+                    "04_calc": "agg_count",
+                    "05_out": "stdout"
+                }
+            }
+        };
+
+        const terminal = document.getElementById('terminal');
+        const slots = {
+            "01_entry": document.getElementById('slot-01'),
+            "02_pre": document.getElementById('slot-02'),
+            "03_proc": document.getElementById('slot-03'),
+            "04_calc": document.getElementById('slot-04'),
+            "05_out": document.getElementById('slot-05')
+        };
+
+        function log(msg, type = 'INF') {
+            const p = document.createElement('p');
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            p.innerHTML = `<span>[${time}][${type}]</span> ${msg}`;
+            terminal.appendChild(p);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        async function loadSimulation(v) {
+            const data = circuits[v];
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+
+            log(`Loading Bitstream: ${data.project} (v${data.version})`, 'SYS');
+            log(`Resetting Active Logic Gates...`, 'HW');
+
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            // 重置所有插槽
+            Object.values(slots).forEach(s => {
+                s.className = 'slot';
+                s.querySelector('.slot-inode').innerText = '-- resetting --';
+            });
+
+            let completed = 0;
+            const keys = Object.keys(data.topology);
+
+            for (const slotKey of keys) {
+                const slotEl = slots[slotKey];
+                const logicName = data.topology[slotKey];
+                const hash = Math.random().toString(16).substr(2, 6);
+                const inodeFile = `${logicName}_${hash}`;
+
+                slotEl.classList.add('flashing');
+
+                // 模拟烧录的代码滚动
+                const scroll = document.createElement('div');
+                scroll.className = 'hex-scroll';
+                scroll.innerText = Array(50).fill(0).map(() => Math.random().toString(16).substr(2, 2).toUpperCase()).join(' ');
+                slotEl.appendChild(scroll);
+
+                await new Promise(r => setTimeout(r, 800)); // 烧录延迟
+
+                log(`Flashed Slot [${slotKey}] <== ${inodeFile}`, 'FLASH');
+
+                slotEl.classList.remove('flashing');
+                slotEl.classList.add('active');
+                slotEl.querySelector('.slot-inode').innerText = inodeFile;
+                scroll.remove();
+
+                completed++;
+                progressBar.style.width = (completed / keys.length * 100) + '%';
+            }
+
+            log(`Bitstream Loaded. Circuit is LIVE.`, 'SYS');
+            document.getElementById('status-badge').style.display = 'block';
+
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+            }, 2000);
+        }
+
+        // 文件拖拽
+        const dropZone = document.getElementById('drop-zone');
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+        dropZone.ondragleave = () => { dropZone.classList.remove('dragover'); };
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            log(`JSON Bitstream detected via DND.`, 'IO');
+            loadSimulation('v2'); // 演示目的，加载 v2
+        };
+    </script>
+</body>
+
+</html>
