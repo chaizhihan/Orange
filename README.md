@@ -33,6 +33,75 @@ ALIN 架构将复杂的实时计算任务拆解为三个抽象层，通过原子
 *   **State Bus / 状态总线**: Persistent memory spaces or data streams that survive across logic switching cycles.
     跨越逻辑切换周期、持续存在的内存空间或数据流通道。
 
+### 2. System Architecture / 系统架构图
+
+```mermaid
+graph TD
+    subgraph Control_Layer ["🧠 Control Layer / 控制层"]
+        AI[AI / LLM]
+    end
+
+    subgraph Architecture_Layer ["🔗 Architecture Layer / 架构层"]
+        ALin[ALin / Linux Kernel]
+        VFS[VFS / Symlink Routing]
+        Bus[Data Bus / Pipes]
+    end
+
+    subgraph Execution_Layer ["⚙️ Execution Layer / 执行层"]
+        Wasm1[Wasm Node A]
+        Wasm2[Wasm Node B]
+        Wasm3[Wasm Node C]
+    end
+
+    AI -- "1. Generate Code" --> Wasm1
+    AI -- "2. Modify Symlink" --> VFS
+    
+    Data_In((Input)) --> Bus
+    Bus --> VFS
+    VFS -- "3. Dynamic Redirect" --> Wasm1
+    VFS -.-> Wasm2
+    
+    Wasm1 -- "4. Compute & Output" --> Bus
+    Bus --> Data_Out((Output))
+
+    style AI fill:#f9f,stroke:#333,stroke-width:2px
+    style ALin fill:#bbf,stroke:#333,stroke-width:2px
+    style Wasm1 fill:#dfd,stroke:#333,stroke-width:2px
+    style Wasm2 fill:#dfd,stroke:#333,stroke-width:2px
+    style Wasm3 fill:#dfd,stroke:#333,stroke-width:2px
+```
+
+### 3. Self-Healing Flow / AI 自愈流程
+
+```mermaid
+sequenceDiagram
+    participant Monitor as Observer
+    participant AI as AI Controller
+    participant Repo as Inode Repo
+    participant VFS as Symlink Router
+    participant Runtime as Wasm Runtime
+
+    Note over Monitor, Runtime: System Running...
+    
+    Runtime->>Monitor: Exception (Trap/Stderr)
+    Monitor->>AI: Send Fault Snapshot
+    
+    Note right of AI: Analyze & Self-Refine...
+    
+    AI->>Repo: Compile New Inode (.wasm)
+    
+    rect rgb(240, 248, 255)
+        Note over AI, VFS: Atomic Switch
+        AI->>VFS: ln -sf (Hot Redirect)
+        VFS-->>Runtime: Point to New Inode
+    end
+    
+    Monitor->>Runtime: Inject Test Traffic
+    Runtime-->>Monitor: Validate Output
+    
+    Note over Monitor, Runtime: Self-healed. Old Inode deprecated.
+```
+
 ---
 
 ## 🎬 Advanced Visualization / 高级演示
