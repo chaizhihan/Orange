@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIN vs Traditional - 3D Architecture Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
+
+        :root {
+            --3b1b-bg: #1c1c1c;
+            --3b1b-blue: #58c4dd;
+            --3b1b-yellow: #ffff00;
+            --3b1b-green: #83c167;
+            --3b1b-red: #fc6255;
+            --3b1b-purple: #9a72ac;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--3b1b-bg);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glow-blue {
+            box-shadow: 0 0 30px rgba(88, 196, 221, 0.3);
+        }
+
+        .glow-yellow {
+            box-shadow: 0 0 30px rgba(255, 255, 0, 0.3);
+        }
+
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .content {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .content>* {
+            pointer-events: auto;
+        }
+
+        .narrator {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 800px;
+            text-align: center;
+            font-size: 1.25rem;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .highlight-blue {
+            color: var(--3b1b-blue);
+            font-weight: 600;
+        }
+
+        .highlight-yellow {
+            color: var(--3b1b-yellow);
+            font-weight: 600;
+        }
+
+        .highlight-green {
+            color: var(--3b1b-green);
+            font-weight: 600;
+        }
+
+        .highlight-red {
+            color: var(--3b1b-red);
+            font-weight: 600;
+        }
+
+        .control-panel {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .control-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .timeline {
+            position: fixed;
+            bottom: 8rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .timeline-dot.active {
+            background: var(--3b1b-blue);
+            box-shadow: 0 0 10px var(--3b1b-blue);
+        }
+
+        .comparison-card {
+            padding: 1.5rem;
+            border-radius: 1rem;
+            max-width: 350px;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric:last-child {
+            border-bottom: none;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <div id="canvas-container"></div>
+
+    <div class="content">
+        <!-- 标题 -->
+        <div class="fixed top-8 left-8">
+            <h1 class="text-3xl font-bold">
+                <span class="highlight-blue">ALIN</span> vs <span class="highlight-red">Traditional</span>
+            </h1>
+            <p class="text-gray-400 mt-2">3D Architecture Comparison</p>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <button class="control-btn bg-gray-800 text-white" onclick="showScene('intro')">介绍</button>
+            <button class="control-btn bg-gray-800 text-white" onclick="showScene('deploy')">部署</button>
+            <button class="control-btn bg-gray-800 text-white" onclick="showScene('hotswap')">热切换</button>
+            <button class="control-btn bg-gray-800 text-white" onclick="showScene('resilience')">自愈</button>
+        </div>
+
+        <!-- 对比卡片 -->
+        <div class="fixed top-32 left-8 comparison-card glass glow-red" id="traditional-card">
+            <h3 class="text-lg font-bold highlight-red mb-4">🏛️ 传统架构</h3>
+            <div class="metric">
+                <span class="text-gray-400">部署耗时</span>
+                <span class="highlight-red">分钟级</span>
+            </div>
+            <div class="metric">
+                <span class="text-gray-400">更新方式</span>
+                <span class="highlight-red">重启进程</span>
+            </div>
+            <div class="metric">
+                <span class="text-gray-400">故障恢复</span>
+                <span class="highlight-red">秒~分钟</span>
+            </div>
+            <div class="metric">
+                <span class="text-gray-400">AI 理解</span>
+                <span class="highlight-red">10000+ tokens</span>
+            </div>
+        </div>
+
+        <div class="fixed top-32 right-8 comparison-card glass glow-blue" id="alin-card">
+            <h3 class="text-lg font-bold highlight-blue mb-4">⚛️ ALIN 架构</h3>
+            <div class="metric">
+                <span class="text-gray-400">部署耗时</span>
+                <span class="highlight-green">毫秒级</span>
+            </div>
+            <div class="metric">
+                <span class="text-gray-400">更新方式</span>
+                <span class="highlight-green">ln -sf 原子切换</span>
+            </div>
+            <div class="metric">
+                <span class="text-gray-400">故障恢复</span>
+                <span class="highlight-green">&lt;100ms</span>
+            </div>
+            <div class="metric">
+                <span class="text-gray-400">AI 理解</span>
+                <span class="highlight-green">500 tokens</span>
+            </div>
+        </div>
+
+        <!-- 时间线 -->
+        <div class="timeline">
+            <div class="timeline-dot active" onclick="showScene('intro')"></div>
+            <div class="timeline-dot" onclick="showScene('deploy')"></div>
+            <div class="timeline-dot" onclick="showScene('hotswap')"></div>
+            <div class="timeline-dot" onclick="showScene('resilience')"></div>
+        </div>
+
+        <!-- 叙述文字 -->
+        <div class="narrator glass p-6 rounded-2xl" id="narrator">
+            想象一下，<span class="highlight-blue">软件不再是凝固的代码</span>，
+            而是像<span class="highlight-yellow">电流</span>一样流动的逻辑。
+            在 ALIN 架构中，每个功能都是一个<span class="highlight-green">原子节点</span>，
+            通过<span class="highlight-blue">符号链接</span>连接成活的电路。
+        </div>
+    </div>
+
+    <script>
+        // Three.js 场景
+        let scene, camera, renderer;
+        let traditionalNodes = [], alinNodes = [], links = [];
+        let currentScene = 'intro';
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1c1c1c);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 15;
+            camera.position.y = 2;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // 添加光源
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+
+            const pointLight = new THREE.PointLight(0x58c4dd, 1, 100);
+            pointLight.position.set(10, 10, 10);
+            scene.add(pointLight);
+
+            // 创建节点
+            createTraditionalArchitecture();
+            createAlinArchitecture();
+
+            // 创建网格背景
+            createGrid();
+
+            animate();
+        }
+
+        function createTraditionalArchitecture() {
+            // 传统架构：一个大的单体块
+            const geometry = new THREE.BoxGeometry(3, 4, 2);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0xfc6255,
+                transparent: true,
+                opacity: 0.8,
+                wireframe: false
+            });
+
+            const monolith = new THREE.Mesh(geometry, material);
+            monolith.position.x = -6;
+            scene.add(monolith);
+            traditionalNodes.push(monolith);
+
+            // 添加边框
+            const edges = new THREE.EdgesGeometry(geometry);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xff8888 }));
+            line.position.copy(monolith.position);
+            scene.add(line);
+        }
+
+        function createAlinArchitecture() {
+            // ALIN 架构：多个小节点通过链接连接
+            const nodePositions = [
+                { x: 4, y: 2, z: 0 },
+                { x: 6, y: 0, z: 0 },
+                { x: 8, y: 2, z: 0 },
+                { x: 6, y: -2, z: 0 },
+            ];
+
+            const geometry = new THREE.SphereGeometry(0.5, 32, 32);
+
+            nodePositions.forEach((pos, i) => {
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x58c4dd,
+                    emissive: 0x58c4dd,
+                    emissiveIntensity: 0.3
+                });
+
+                const node = new THREE.Mesh(geometry, material);
+                node.position.set(pos.x, pos.y, pos.z);
+                scene.add(node);
+                alinNodes.push(node);
+            });
+
+            // 创建连接线
+            createLinks();
+        }
+
+        function createLinks() {
+            const material = new THREE.LineBasicMaterial({
+                color: 0x58c4dd,
+                transparent: true,
+                opacity: 0.6
+            });
+
+            const connections = [[0, 1], [1, 2], [1, 3]];
+
+            connections.forEach(([from, to]) => {
+                const points = [
+                    alinNodes[from].position.clone(),
+                    alinNodes[to].position.clone()
+                ];
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(geometry, material);
+                scene.add(line);
+                links.push(line);
+            });
+        }
+
+        function createGrid() {
+            const gridHelper = new THREE.GridHelper(30, 30, 0x333333, 0x222222);
+            gridHelper.position.y = -5;
+            scene.add(gridHelper);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 旋转传统架构
+            traditionalNodes.forEach(node => {
+                node.rotation.y += 0.005;
+            });
+
+            // ALIN 节点浮动效果
+            alinNodes.forEach((node, i) => {
+                node.position.y += Math.sin(Date.now() * 0.002 + i) * 0.002;
+            });
+
+            // 粒子流动效果 (模拟数据流)
+            links.forEach((link, i) => {
+                link.material.opacity = 0.4 + Math.sin(Date.now() * 0.005 + i) * 0.3;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        const narratorTexts = {
+            intro: `想象一下，<span class="highlight-blue">软件不再是凝固的代码</span>，
+                    而是像<span class="highlight-yellow">电流</span>一样流动的逻辑。
+                    在 ALIN 架构中，每个功能都是一个<span class="highlight-green">原子节点</span>，
+                    通过<span class="highlight-blue">符号链接</span>连接成活的电路。`,
+
+            deploy: `传统架构的部署需要<span class="highlight-red">重启整个进程</span>，
+                     用户会经历<span class="highlight-red">短暂的服务中断</span>。
+                     而 ALIN 只需执行 <code class="highlight-green">ln -sf</code>，
+                     在<span class="highlight-green">纳秒级</span>完成原子切换。`,
+
+            hotswap: `看这个神奇的瞬间：当我们切换<span class="highlight-blue">过滤器节点</span>，
+                      数据流<span class="highlight-yellow">没有任何抖动</span>。
+                      这就像<span class="highlight-green">拨动开关</span>，
+                      而不是<span class="highlight-red">重建电路</span>。`,
+
+            resilience: `当一个节点<span class="highlight-red">崩溃</span>，
+                         传统架构需要等待<span class="highlight-red">健康检查超时</span>，
+                         然后<span class="highlight-red">重新拉起容器</span>。
+                         ALIN 在<span class="highlight-green">毫秒内</span>
+                         自动将链接指向<span class="highlight-green">备用节点</span>。`
+        };
+
+        function showScene(sceneName) {
+            currentScene = sceneName;
+            document.getElementById('narrator').innerHTML = narratorTexts[sceneName];
+
+            // 更新时间线
+            document.querySelectorAll('.timeline-dot').forEach((dot, i) => {
+                const scenes = ['intro', 'deploy', 'hotswap', 'resilience'];
+                dot.classList.toggle('active', scenes[i] === sceneName);
+            });
+
+            // 根据场景调整相机位置
+            if (sceneName === 'deploy') {
+                animateCamera({ x: 0, y: 5, z: 20 });
+            } else if (sceneName === 'hotswap') {
+                animateCamera({ x: 6, y: 2, z: 10 });
+                // 触发热切换动画
+                triggerHotSwap();
+            } else if (sceneName === 'resilience') {
+                animateCamera({ x: 6, y: 0, z: 12 });
+            } else {
+                animateCamera({ x: 0, y: 2, z: 15 });
+            }
+        }
+
+        function animateCamera(target) {
+            const duration = 1000;
+            const start = {
+                x: camera.position.x,
+                y: camera.position.y,
+                z: camera.position.z
+            };
+            const startTime = Date.now();
+
+            function update() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+
+                camera.position.x = start.x + (target.x - start.x) * eased;
+                camera.position.y = start.y + (target.y - start.y) * eased;
+                camera.position.z = start.z + (target.z - start.z) * eased;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            }
+            update();
+        }
+
+        function triggerHotSwap() {
+            // 热切换动画：第二个节点闪烁变色
+            if (alinNodes[1]) {
+                const originalColor = alinNodes[1].material.color.getHex();
+                alinNodes[1].material.color.setHex(0xffff00);
+                alinNodes[1].material.emissive.setHex(0xffff00);
+
+                setTimeout(() => {
+                    alinNodes[1].material.color.setHex(0x83c167);
+                    alinNodes[1].material.emissive.setHex(0x83c167);
+                }, 500);
+
+                setTimeout(() => {
+                    alinNodes[1].material.color.setHex(originalColor);
+                    alinNodes[1].material.emissive.setHex(originalColor);
+                }, 1500);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+
+</html>

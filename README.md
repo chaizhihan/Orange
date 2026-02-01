@@ -176,14 +176,17 @@ atomicLogicInodeNetwork/
 <td>imaging 图像处理</td>
 <td>token 优化器</td>
 <td>evolution 进化</td>
+<td>3D 对比</td>
 </tr>
 <tr>
 <td><a href="https://chaizhihan.github.io/Orange/stream_dashboard.html"><img src="docs/assets/stream_dashboard.png"></a></td>
 <td><a href="https://chaizhihan.github.io/Orange/image_dashboard.html"><img src="docs/assets/image_dashboard.png"></a></td>
 <td><a href="https://chaizhihan.github.io/Orange/token_dashboard.html"><img src="docs/assets/token_dashboard.png"></a></td>
 <td><a href="https://chaizhihan.github.io/Orange/evolution_dashboard.html"><img src="docs/assets/evolution_dashboard.png"></a></td>
+<td><a href="https://chaizhihan.github.io/Orange/3d_comparison.html"><img src="docs/assets/3d_comparison.png"></a></td>
 </tr>
 </table>
+
 
 
 
