@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIN Evolution Dashboard - 逻辑进化仪表盘</title>
+    <style>
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-hover: #1a1a24;
+            --accent: #8b5cf6;
+            --accent-glow: rgba(139, 92, 246, 0.4);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #f1f5f9;
+            --text-dim: #64748b;
+            --border: #2a2a3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(180deg, var(--bg-card), transparent);
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, var(--accent), #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .evolve-btn {
+            background: linear-gradient(135deg, var(--accent), #ec4899);
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .evolve-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            height: calc(100vh - 70px);
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: var(--accent);
+        }
+
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* 拓扑图 */
+        #topology {
+            flex: 1;
+            position: relative;
+        }
+
+        #topology-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 热插拔面板 */
+        .slots {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .slot {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed var(--border);
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .slot.active {
+            border-style: solid;
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .slot.active::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 12px;
+            height: 12px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .slot:hover {
+            border-color: var(--accent);
+            background: var(--bg-hover);
+        }
+
+        .slot-name {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            margin-top: 0.25rem;
+        }
+
+        .slot-icon {
+            font-size: 1.5rem;
+        }
+
+        .slot.empty .slot-icon {
+            color: var(--text-dim);
+        }
+
+        /* 灰度发布 */
+        .canary-container {
+            padding: 1rem;
+        }
+
+        .canary-bar {
+            height: 30px;
+            background: var(--border);
+            border-radius: 4px;
+            display: flex;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .canary-v1 {
+            background: var(--success);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .canary-v2 {
+            background: var(--accent);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+
+        .canary-slider {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+
+        .canary-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        /* 版本时间轴 */
+        .timeline {
+            padding: 1rem;
+        }
+
+        .timeline-track {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding: 0.5rem 0;
+        }
+
+        .timeline-node {
+            min-width: 60px;
+            padding: 0.5rem;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .timeline-node.current {
+            border-color: var(--accent);
+            background: rgba(139, 92, 246, 0.2);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .timeline-node:hover {
+            border-color: var(--accent);
+        }
+
+        .timeline-node .version {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .timeline-node .hash {
+            font-size: 0.6rem;
+            color: var(--text-dim);
+        }
+
+        .timeline-arrow {
+            color: var(--text-dim);
+        }
+
+        /* 元数据面板 */
+        .meta-panel {
+            padding: 1rem;
+            font-size: 0.75rem;
+        }
+
+        .meta-panel pre {
+            background: var(--bg-dark);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            color: var(--success);
+        }
+
+        /* 自愈演示 */
+        .resilience {
+            padding: 1rem;
+        }
+
+        .resilience-status {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .status-indicator.crashed {
+            background: var(--danger);
+            box-shadow: 0 0 10px var(--danger);
+            animation: pulse 0.5s infinite;
+        }
+
+        .status-indicator.recovering {
+            background: var(--warning);
+            box-shadow: 0 0 10px var(--warning);
+            animation: pulse 0.3s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .crash-btn {
+            background: var(--danger);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.75rem;
+        }
+
+        .recovery-time {
+            font-size: 0.85rem;
+            color: var(--success);
+        }
+
+        /* 吞吐量图表 */
+        .throughput {
+            height: 80px;
+            padding: 0.5rem 1rem;
+        }
+
+        .throughput-bars {
+            display: flex;
+            align-items: flex-end;
+            height: 100%;
+            gap: 2px;
+        }
+
+        .throughput-bar {
+            flex: 1;
+            background: linear-gradient(180deg, var(--accent), var(--success));
+            border-radius: 2px 2px 0 0;
+            transition: height 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>⚛️ ALIN Evolution Dashboard</h1>
+        <button class="evolve-btn" onclick="evolve()">🧬 进化 (Evolve)</button>
+    </div>
+
+    <div class="main">
+        <div class="left-col">
+            <!-- 实时拓扑图 -->
+            <div class="panel" style="flex: 2;">
+                <div class="panel-header">
+                    <span>📊 实时拓扑图 (Live Topology)</span>
+                    <span class="badge">4 Nodes</span>
+                </div>
+                <div id="topology">
+                    <canvas id="topology-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- 热插拔面板 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>🔌 逻辑插槽 (Logic Slots)</span>
+                    <span style="font-size: 0.7rem; color: var(--text-dim);">拖拽以插拔</span>
+                </div>
+                <div class="slots" id="slots">
+                    <div class="slot active" data-node="parse_json">
+                        <span class="slot-icon">📝</span>
+                        <span class="slot-name">01_parse</span>
+                    </div>
+                    <div class="slot active" data-node="filter_level">
+                        <span class="slot-icon">🔍</span>
+                        <span class="slot-name">02_filter</span>
+                    </div>
+                    <div class="slot active" data-node="agg_count">
+                        <span class="slot-icon">📊</span>
+                        <span class="slot-name">03_agg</span>
+                    </div>
+                    <div class="slot active" data-node="alert_console">
+                        <span class="slot-icon">🔔</span>
+                        <span class="slot-name">04_alert</span>
+                    </div>
+                    <div class="slot empty" onclick="addSlot()">
+                        <span class="slot-icon">+</span>
+                        <span class="slot-name">添加插槽</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <!-- 灰度发布 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>🎨 灰度发布 (Canary)</span>
+                </div>
+                <div class="canary-container">
+                    <div class="canary-bar">
+                        <div class="canary-v1" id="canary-v1" style="width: 90%;">v1 (90%)</div>
+                        <div class="canary-v2" id="canary-v2" style="width: 10%;">v2</div>
+                    </div>
+                    <input type="range" class="canary-slider" min="0" max="100" value="10"
+                        onchange="updateCanary(this.value)">
+                    <div class="canary-label">
+                        <span>← 保守 (v1)</span>
+                        <span>激进 (v2) →</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 自愈演示 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>💪 极速自愈 (Resilience)</span>
+                </div>
+                <div class="resilience">
+                    <div class="resilience-status">
+                        <div class="status-indicator" id="status-indicator"></div>
+                        <span id="status-text">系统正常运行</span>
+                        <button class="crash-btn" onclick="simulateCrash()">模拟崩溃</button>
+                    </div>
+                    <div class="recovery-time" id="recovery-time" style="margin-top: 0.5rem;"></div>
+                </div>
+            </div>
+
+            <!-- 版本时间轴 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>⏱️ 版本时间轴 (Timeline)</span>
+                </div>
+                <div class="timeline">
+                    <div class="timeline-track" id="timeline">
+                        <div class="timeline-node" onclick="switchVersion(1)">
+                            <div class="version">v1</div>
+                            <div class="hash">abc123</div>
+                        </div>
+                        <span class="timeline-arrow">→</span>
+                        <div class="timeline-node" onclick="switchVersion(2)">
+                            <div class="version">v2</div>
+                            <div class="hash">def456</div>
+                        </div>
+                        <span class="timeline-arrow">→</span>
+                        <div class="timeline-node current" onclick="switchVersion(3)">
+                            <div class="version">v3</div>
+                            <div class="hash">ghi789</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 元数据面板 -->
+            <div class="panel" style="flex: 1;">
+                <div class="panel-header">
+                    <span>📋 元数据 (.meta)</span>
+                </div>
+                <div class="meta-panel">
+                    <pre id="meta-content"># 点击节点查看元数据
+
+[node]
+name = filter_level
+hash = abc12345
+inode = 7335321
+
+[ai_context]
+热切换: ln -sf filter_v2 active/02</pre>
+                </div>
+            </div>
+
+            <!-- 吞吐量 -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>📈 吞吐量 (Throughput)</span>
+                    <span style="font-size: 0.7rem;">1.2k/s</span>
+                </div>
+                <div class="throughput">
+                    <div class="throughput-bars" id="throughput-bars"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 拓扑图绘制
+        const canvas = document.getElementById('topology-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const container = document.getElementById('topology');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            drawTopology();
+        }
+
+        const nodes = [
+            { id: 'input', x: 0.1, y: 0.5, label: 'stdin', color: '#64748b' },
+            { id: 'parse', x: 0.3, y: 0.5, label: 'parse_json', hash: 'abc123', color: '#8b5cf6' },
+            { id: 'filter', x: 0.5, y: 0.5, label: 'filter_level', hash: 'def456', color: '#8b5cf6', evolving: false },
+            { id: 'agg', x: 0.7, y: 0.5, label: 'agg_count', hash: 'ghi789', color: '#8b5cf6' },
+            { id: 'output', x: 0.9, y: 0.5, label: 'stdout', color: '#64748b' }
+        ];
+
+        let particles = [];
+
+        function drawTopology() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制连线
+            ctx.strokeStyle = '#2a2a3a';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < nodes.length - 1; i++) {
+                ctx.beginPath();
+                ctx.moveTo(nodes[i].x * canvas.width, nodes[i].y * canvas.height);
+                ctx.lineTo(nodes[i + 1].x * canvas.width, nodes[i + 1].y * canvas.height);
+                ctx.stroke();
+            }
+
+            // 绘制粒子
+            ctx.fillStyle = '#10b981';
+            particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 绘制节点
+            nodes.forEach(node => {
+                const x = node.x * canvas.width;
+                const y = node.y * canvas.height;
+                const radius = 30;
+
+                // 发光效果
+                if (node.evolving) {
+                    ctx.shadowColor = '#ec4899';
+                    ctx.shadowBlur = 20;
+                }
+
+                // 节点圆
+                ctx.fillStyle = node.color;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+
+                // 标签
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(node.label, x, y + 4);
+
+                // Hash
+                if (node.hash) {
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '8px monospace';
+                    ctx.fillText(node.hash, x, y + 50);
+                }
+            });
+        }
+
+        // 粒子动画
+        function animateParticles() {
+            if (Math.random() < 0.1) {
+                particles.push({
+                    x: nodes[0].x * canvas.width,
+                    y: nodes[0].y * canvas.height,
+                    progress: 0
+                });
+            }
+
+            particles = particles.filter(p => {
+                p.progress += 0.02;
+                if (p.progress >= 1) return false;
+
+                const idx = Math.floor(p.progress * (nodes.length - 1));
+                const nextIdx = Math.min(idx + 1, nodes.length - 1);
+                const localProgress = (p.progress * (nodes.length - 1)) % 1;
+
+                p.x = (nodes[idx].x + (nodes[nextIdx].x - nodes[idx].x) * localProgress) * canvas.width;
+                p.y = (nodes[idx].y + (nodes[nextIdx].y - nodes[idx].y) * localProgress) * canvas.height;
+                return true;
+            });
+
+            drawTopology();
+            requestAnimationFrame(animateParticles);
+        }
+
+        // 进化动画
+        function evolve() {
+            const filterNode = nodes.find(n => n.id === 'filter');
+            filterNode.evolving = true;
+            filterNode.hash = 'NEW' + Math.random().toString(36).substr(2, 4);
+            filterNode.color = '#ec4899';
+
+            // 更新时间轴
+            const timeline = document.getElementById('timeline');
+            document.querySelectorAll('.timeline-node').forEach(n => n.classList.remove('current'));
+            const newNode = document.createElement('span');
+            newNode.className = 'timeline-arrow';
+            newNode.textContent = '→';
+            timeline.appendChild(newNode);
+
+            const versionNode = document.createElement('div');
+            versionNode.className = 'timeline-node current';
+            versionNode.innerHTML = `<div class="version">v${document.querySelectorAll('.timeline-node').length + 1}</div><div class="hash">${filterNode.hash}</div>`;
+            timeline.appendChild(versionNode);
+
+            setTimeout(() => {
+                filterNode.evolving = false;
+                filterNode.color = '#8b5cf6';
+            }, 2000);
+        }
+
+        // 灰度发布
+        function updateCanary(value) {
+            document.getElementById('canary-v1').style.width = (100 - value) + '%';
+            document.getElementById('canary-v1').textContent = `v1 (${100 - value}%)`;
+            document.getElementById('canary-v2').style.width = value + '%';
+            document.getElementById('canary-v2').textContent = value > 20 ? `v2 (${value}%)` : '';
+        }
+
+        // 模拟崩溃
+        function simulateCrash() {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            const recoveryTime = document.getElementById('recovery-time');
+
+            indicator.className = 'status-indicator crashed';
+            statusText.textContent = '⚠️ 节点崩溃!';
+            recoveryTime.textContent = '';
+
+            const start = performance.now();
+
+            setTimeout(() => {
+                indicator.className = 'status-indicator recovering';
+                statusText.textContent = '🔄 自愈中...';
+            }, 100);
+
+            setTimeout(() => {
+                indicator.className = 'status-indicator';
+                statusText.textContent = '✅ 系统已恢复';
+                const elapsed = (performance.now() - start).toFixed(0);
+                recoveryTime.textContent = `恢复耗时: ${elapsed}ms (ln -sf 原子切换)`;
+            }, 300);
+        }
+
+        // 版本切换
+        function switchVersion(v) {
+            document.querySelectorAll('.timeline-node').forEach((n, i) => {
+                n.classList.toggle('current', i === v - 1);
+            });
+        }
+
+        // 吞吐量图
+        function initThroughput() {
+            const container = document.getElementById('throughput-bars');
+            for (let i = 0; i < 30; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'throughput-bar';
+                bar.style.height = '20%';
+                container.appendChild(bar);
+            }
+
+            setInterval(() => {
+                const bars = container.querySelectorAll('.throughput-bar');
+                bars.forEach(bar => {
+                    bar.style.height = (20 + Math.random() * 60) + '%';
+                });
+            }, 500);
+        }
+
+        // 添加插槽
+        function addSlot() {
+            alert('🔌 新逻辑热插入!\n\n在 ALIN 中，只需:\nln -sf node_crypto active/05_crypto\n\n无需重启，即插即用!');
+        }
+
+        // 初始化
+        window.onload = () => {
+            resizeCanvas();
+            animateParticles();
+            initThroughput();
+        };
+        window.onresize = resizeCanvas;
+    </script>
+</body>
+
+</html>
