@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIN: The Evolution of Logic | 3Blue1Brown Style Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #1a1b1e;
+            --3b1b-blue: #58c4dd;
+            --3b1b-yellow: #ffff00;
+            --3b1b-green: #83c167;
+            --3b1b-red: #fc6255;
+            --3b1b-purple: #9a72ac;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .overlay {
+            position: relative;
+            z-index: 10;
+            pointer-events: none;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2.5rem;
+        }
+
+        .overlay>* {
+            pointer-events: auto;
+        }
+
+        .narrative-card {
+            background: rgba(26, 27, 30, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(88, 196, 221, 0.2);
+            padding: 2rem;
+            max-width: 32rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .formula-text {
+            font-style: italic;
+            color: var(--3b1b-yellow);
+        }
+
+        .math-label {
+            position: absolute;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .btn-sequence {
+            background: rgba(88, 196, 221, 0.1);
+            border: 1px solid var(--3b1b-blue);
+            color: var(--3b1b-blue);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-sequence:hover {
+            background: var(--3b1b-blue);
+            color: var(--bg-base);
+            transform: translateY(-2px);
+        }
+
+        .btn-sequence.active {
+            background: var(--3b1b-blue);
+            color: var(--bg-base);
+        }
+
+        #ai-detector {
+            position: fixed;
+            bottom: 2.5rem;
+            right: 2.5rem;
+            width: 280px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 1rem;
+        }
+
+        .token-bar-container {
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0.75rem 0;
+        }
+
+        .token-bar {
+            height: 100%;
+            transition: width 1.5s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .grid-line {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.03);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="overlay">
+        <!-- Header Section -->
+        <header class="flex justify-between items-start">
+            <div class="group">
+                <h1 class="text-4xl font-bold tracking-tight">
+                    <span style="color: var(--3b1b-blue)">ALIN</span>
+                    <span class="text-white/20">/</span>
+                    <span style="color: var(--3b1b-red)">Architecture</span>
+                </h1>
+                <p class="text-white/40 mt-1 text-sm">Quantifying the Paradigm Shift</p>
+            </div>
+
+            <nav class="flex gap-3 bg-black/40 p-2 rounded-xl backdrop-blur-md border border-white/5">
+                <button class="btn-sequence active" onclick="playSequence('intro', 0)">Introduction</button>
+                <button class="btn-sequence" onclick="playSequence('monolith', 1)">The Monolith</button>
+                <button class="btn-sequence" onclick="playSequence('network', 2)">The Network</button>
+                <button class="btn-sequence" onclick="playSequence('evolution', 3)">Fluid Logic</button>
+            </nav>
+        </header>
+
+        <!-- Narrative Section -->
+        <main class="flex-1 flex items-center">
+            <div id="narrative-box" class="narrative-card translate-x-[-100px] opacity-0">
+                <div id="narrative-tag" class="text-xs uppercase tracking-widest text-white/40 mb-2">Act I: The Concept
+                </div>
+                <h2 id="narrative-title" class="text-2xl font-bold mb-4">Software is a Flow</h2>
+                <div id="narrative-content" class="text-white/70 leading-relaxed text-lg">
+                    In traditional computing, we think of software as a <span class="formula-text">frozen object</span>.
+                    But in ALIN, logic is a <span style="color: var(--3b1b-yellow)">dynamic stream</span> of atomic
+                    Inodes.
+                </div>
+            </div>
+        </main>
+
+        <!-- Tooltip layer (Absolute labels for 3D elements) -->
+        <div id="label-layer"></div>
+    </div>
+
+    <!-- AI Token Detector Panel -->
+    <div id="ai-detector" class="opacity-0 translate-y-20">
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-xs font-bold text-white/50">AI COMPREHENSION</span>
+            <span class="text-[10px] bg-white/10 px-2 py-0.5 rounded uppercase">Realtime Scan</span>
+        </div>
+
+        <div class="mb-4">
+            <div class="flex justify-between text-[11px] mb-1">
+                <span>Context Overhead</span>
+                <span id="token-count" class="font-bold">10,240 tokens</span>
+            </div>
+            <div class="token-bar-container">
+                <div id="token-bar" class="token-bar bg-red-500" style="width: 100%"></div>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <div class="flex items-center gap-2 text-[10px] text-white/60">
+                <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                <span id="status-msg">Complexity Limit Exceeded</span>
+            </div>
+            <div class="text-[9px] text-white/30 italic" id="ai-insight">
+                "Traditional monolith requires deep parsing of cross-dependencies..."
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Scene Initialization ---
+        let scene, camera, renderer, clock;
+        let monolith, networkGroup, nodes = [], links = [], particles = [];
+
+        const COLORS = {
+            bg: 0x1a1b1e,
+            blue: 0x58c4dd,
+            red: 0xfc6255,
+            yellow: 0xffff00,
+            green: 0x83c167,
+            grid: 0x24252a
+        };
+
+        function init3D() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(COLORS.bg);
+            scene.fog = new THREE.Fog(COLORS.bg, 15, 60);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 25);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            clock = new THREE.Clock();
+
+            // Lights
+            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambient);
+
+            const spot = new THREE.SpotLight(0xffffff, 1.5);
+            spot.position.set(20, 50, 10);
+            spot.angle = 0.3;
+            scene.add(spot);
+
+            // Grid
+            const grid = new THREE.GridHelper(100, 50, COLORS.grid, COLORS.grid);
+            grid.position.y = -5;
+            scene.add(grid);
+
+            createMonolith();
+            createNetwork();
+            animate();
+
+            // Initial animation
+            gsap.to('#narrative-box', { x: 0, opacity: 1, duration: 1.5, ease: 'power4.out', delay: 0.5 });
+            gsap.to('#ai-detector', { y: 0, opacity: 1, duration: 1.2, ease: 'back.out(1.7)', delay: 1 });
+        }
+
+        // --- 2. Architecture Models ---
+
+        function createMonolith() {
+            const group = new THREE.Group();
+            const geometry = new THREE.BoxGeometry(6, 4, 3);
+            const material = new THREE.MeshPhongMaterial({
+                color: COLORS.red,
+                opacity: 0.6,
+                transparent: true,
+                shininess: 100
+            });
+
+            const core = new THREE.Mesh(geometry, material);
+            const wireframe = new THREE.LineSegments(
+                new THREE.EdgesGeometry(geometry),
+                new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.2, transparent: true })
+            );
+
+            group.add(core);
+            group.add(wireframe);
+            group.position.set(-15, 0, 0); // Position it to the left
+            monolith = group;
+            scene.add(monolith);
+
+            // Add internal "dependency entanglement"
+            for (let i = 0; i < 20; i++) {
+                const innerGeo = new THREE.BoxGeometry(Math.random() * 2, Math.random() * 2, Math.random() * 2);
+                const innerMat = new THREE.MeshPhongMaterial({ color: 0x442222, transparent: true, opacity: 0.3 });
+                const innerBox = new THREE.Mesh(innerGeo, innerMat);
+                innerBox.position.set(
+                    (Math.random() - 0.5) * 5,
+                    (Math.random() - 0.5) * 3,
+                    (Math.random() - 0.5) * 2
+                );
+                monolith.add(innerBox);
+            }
+        }
+
+        function createNetwork() {
+            networkGroup = new THREE.Group();
+            networkGroup.position.set(15, 0, 0); // Position it to the right
+            scene.add(networkGroup);
+
+            const nodePositions = [
+                { x: -6, y: 3 }, { x: -3, y: 0 }, { x: 0, y: 3 },
+                { x: 3, y: 0 }, { x: 6, y: 3 }
+            ];
+
+            const nodeGeo = new THREE.SphereGeometry(0.8, 32, 32);
+
+            nodePositions.forEach((pos, i) => {
+                const nodeMat = new THREE.MeshPhongMaterial({
+                    color: COLORS.blue,
+                    emissive: COLORS.blue,
+                    emissiveIntensity: 0.2,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const node = new THREE.Mesh(nodeGeo, nodeMat);
+                node.position.set(pos.x, pos.y, 0);
+                networkGroup.add(node);
+                nodes.push(node);
+            });
+
+            // Create Atomic Links
+            const linkMat = new THREE.LineBasicMaterial({ color: COLORS.blue, transparent: true, opacity: 0.3 });
+            for (let i = 0; i < nodes.length - 1; i++) {
+                const points = [nodes[i].position, nodes[i + 1].position];
+                const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+                const line = new THREE.Line(lineGeo, linkMat);
+                networkGroup.add(line);
+                links.push(line);
+            }
+        }
+
+        // --- 3. Animation Loop ---
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            // Monolith subtle breathing/shaking
+            if (currentSequence === 'monolith') {
+                monolith.rotation.y += 0.005;
+                monolith.position.y = Math.sin(time) * 0.2;
+            } else {
+                monolith.rotation.y += 0.002;
+            }
+
+            // Network activation pulse
+            nodes.forEach((node, i) => {
+                const scale = 1 + Math.sin(time * 2 + i) * 0.05;
+                node.scale.set(scale, scale, scale);
+                node.material.emissiveIntensity = 0.2 + Math.sin(time * 4) * 0.1;
+                node.position.y += Math.sin(time * 0.5 + i) * 0.005;
+            });
+
+            // Update particles if any
+            updateParticles();
+
+            renderer.render(scene, camera);
+        }
+
+        function updateParticles() {
+            // Simplified particle burst/flow for ALIN
+        }
+
+        // --- 4. Narrative Logic ---
+        let currentSequence = 'intro';
+
+        const STORIES = [
+            {
+                tag: "Act I: The Concept",
+                title: "Traditional Monolith",
+                content: "Everything is tightly coupled. Changing a small part of the logic requires rebuilding the entire universe of the app. It's <span class='formula-text'>static, heavy, and fragile</span>.",
+                cam: { x: -8, y: 4, z: 12 },
+                tokens: 10240,
+                color: 'red',
+                msg: 'High Context Overhead',
+                insight: 'AI must parse thousands of interdependent lines to guarantee safety...'
+            },
+            {
+                tag: "Act II: Deployment Pain",
+                title: "Software as a Black Box",
+                content: "Updating means a cold restart. For seconds or minutes, the system is dead. The entire state is lost and must be reconstituted.",
+                cam: { x: -12, y: 2, z: 8 },
+                tokens: 8192,
+                color: 'red',
+                msg: 'System Downtime Imminent',
+                insight: 'Memory footprint is opaque. AI cannot safely manipulate state during transition.'
+            },
+            {
+                tag: "Act III: The ALIN Paradigm",
+                title: "The Atomic Network",
+                content: "Logic is broken into <span style='color: var(--3b1b-blue)'>Atomic Inodes</span>. They exist as independent entities in the file system, connected by mere references.",
+                cam: { x: 12, y: 4, z: 12 },
+                tokens: 512,
+                color: 'green',
+                msg: 'Optimal AI Comprehension',
+                insight: 'Context limited to specific Node interface. 95% token efficiency gain.'
+            },
+            {
+                tag: "Act IV: Fluid Logic",
+                title: "Nanosecond Evolution",
+                content: "Updating logic is just <span class='formula-text'>ln -sf</span>. The system evolves while running. No downtime, no friction, just pure flow.",
+                cam: { x: 15, y: 2, z: 10 },
+                tokens: 280,
+                color: 'green',
+                msg: 'System Healthy & Fluid',
+                insight: 'Self-healing triggered in 300ms. Inode hash verified. Logic swap complete.'
+            }
+        ];
+
+        function playSequence(name, index) {
+            currentSequence = name;
+            const step = STORIES[index];
+
+            // Update UI buttons
+            document.querySelectorAll('.btn-sequence').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+
+            // Narrative transition
+            gsap.to('#narrative-box', {
+                opacity: 0,
+                x: -50,
+                duration: 0.4,
+                onComplete: () => {
+                    document.getElementById('narrative-tag').innerText = step.tag;
+                    document.getElementById('narrative-title').innerText = step.title;
+                    document.getElementById('narrative-content').innerHTML = step.content;
+                    gsap.to('#narrative-box', { opacity: 1, x: 0, duration: 0.8, ease: 'power2.out' });
+                }
+            });
+
+            // Camera transition
+            gsap.to(camera.position, {
+                x: step.cam.x,
+                y: step.cam.y,
+                z: step.cam.z,
+                duration: 2,
+                ease: "expo.inOut"
+            });
+
+            // AI Detector transition
+            document.getElementById('token-count').innerText = step.tokens + ' tokens';
+            const bar = document.getElementById('token-bar');
+            bar.className = `token-bar bg-${step.color}-500`;
+            bar.style.width = (step.tokens / 10240 * 100) + '%';
+
+            const dot = document.getElementById('status-dot');
+            dot.className = `w-1.5 h-1.5 rounded-full bg-${step.color}-500 animate-pulse`;
+
+            document.getElementById('status-msg').innerText = step.msg;
+            document.getElementById('status-msg').style.color = step.color === 'red' ? '#fc6255' : '#83c167';
+
+            document.getElementById('ai-insight').innerText = step.insight;
+
+            // Trigger specific 3D effects
+            if (name === 'monolith') shakeMonolith();
+            if (name === 'evolution') pulseNetwork();
+        }
+
+        function shakeMonolith() {
+            gsap.to(monolith.position, {
+                x: -14.8, repeat: 10, yoyo: true, duration: 0.05, onComplete: () => {
+                    gsap.to(monolith.position, { x: -15, duration: 0.5 });
+                }
+            });
+        }
+
+        function pulseNetwork() {
+            nodes.forEach(node => {
+                gsap.to(node.material, { emissiveIntensity: 1, duration: 0.2, yoyo: true, repeat: 1 });
+            });
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init3D();
+    </script>
+</body>
+
+</html>
